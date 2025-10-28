@@ -23,7 +23,17 @@
 			{
 				"available": "newly",
 				"ignoreSelectors": [
-					"nesting"
+					"nesting",
+					"selection"
+				],
+				"ignoreProperties": {
+					"accent-color": [],
+					"interpolate-size": [ "allow-keywords" ],
+					"text-wrap": [ "pretty" ],
+					"user-select": [ "none" ]
+				},
+				"ignoreAtRules": [
+					"view-transition"
 				]
 			}
 		]

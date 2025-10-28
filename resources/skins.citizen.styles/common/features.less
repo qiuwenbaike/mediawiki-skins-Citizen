@@ -142,27 +142,18 @@
 		// 		transition-duration: var( --transition-duration-base );
 		// 	}
 
-		// 	.citizen-toc,
-		// 	.page-actions {
-		// 		pointer-events: none;
-		// 		opacity: 0;
-		// 		transform: translate3d( 0, var( --header-size ), 0 );
-		// 	}
-
-		// 	&.citizen-sticky-header-visible {
-		// 		.citizen-page-header {
-		// 			transform: translate3d( 0, -100%, 0 );
-		// 		}
-
-		// 		.citizen-page-heading {
-		// 			opacity: 0;
-		// 		}
-		// 	}
+		// HACK: Stop the page actions from flickering when the header is hidden
+		// .page-actions {
+		// 	transition-property: transform;
 		// }
 
-		// .citizen-scroll--up {
-		// 	.page-actions {
-		// 		transition-delay: ~'calc( var( --transition-duration-medium ) + 100ms )';
+		// .citizen-header {
+		// 	transform: translate3d( 0, 100%, 0 );
+		// }
+
+		// &.citizen-sticky-header-visible {
+		// 	.citizen-sticky-header-container {
+		// 		transform: translate3d( 0, -100%, 0 );
 		// 	}
 		// }
 	}
