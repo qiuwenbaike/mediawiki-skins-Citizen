@@ -9,7 +9,6 @@
 function initResizeObserver( onResize, onResizeStart, onResizeEnd ) {
 	let resizeStarted = false;
 
-	/* eslint-disable-next-line compat/compat */
 	return new ResizeObserver( ( entries ) => {
 		if ( onResizeStart && !resizeStarted ) {
 			onResizeStart( entries[ 0 ] );

@@ -4,7 +4,6 @@ const fetchJson = require( '../fetch.js' );
 const urlGenerator = require( '../urlGenerator.js' );
 
 // Based on mediawiki.searchSuggest
-// eslint-disable-next-line array-callback-return
 const searchNS = Object.entries( mw.config.get( 'wgFormattedNamespaces' ) ).map( ( [ nsID ] ) => {
 	if ( nsID >= 0 && mw.user.options.get( 'searchNs' + nsID ) ) {
 		// Cast string key to number

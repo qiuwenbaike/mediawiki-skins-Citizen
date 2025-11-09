@@ -133,7 +133,6 @@ function smwAskApiSearchClient( config ) {
 			};
 
 			// @see https://www.semantic-mediawiki.org/wiki/Help:API:askargs
-			/* eslint-disable camelcase */
 			const params = {
 				format: 'json',
 				formatversion: '2',
@@ -143,7 +142,6 @@ function smwAskApiSearchClient( config ) {
 				printouts: getPrintouts(),
 				parameters: `limit=${ limit.toString() }`
 			};
-			/* eslint-enable camelcase */
 			const search = new URLSearchParams( params );
 			const url = `${ searchApiUrl }?${ search.toString() }`;
 			const result = fetchJson( url, {

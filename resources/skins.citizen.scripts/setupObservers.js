@@ -35,7 +35,6 @@ const getHeadingIntersectionHandler = ( changeActiveSection ) =>
 	/**
 	 * @param {HTMLElement} section
 	 */
-	// eslint-disable-next-line implicit-arrow-linebreak
 	( section ) => {
 		const headline = section.classList.contains( 'mw-body-content' ) ?
 			section :
@@ -75,7 +74,6 @@ const setupTableOfContents = ( tocElement, bodyContent, initSectionObserverFn ) 
 	}
 
 	const handleTocSectionChange = () => {
-		// eslint-disable-next-line no-use-before-define
 		sectionObserver.pause();
 
 		// T297614: We want the link that the user has clicked inside the TOC or the
@@ -99,7 +97,6 @@ const setupTableOfContents = ( tocElement, bodyContent, initSectionObserverFn ) 
 		// sometimes waits up to 3 frames before painting the new scroll position so
 		// we have that as the limit.
 		deferUntilFrame( () => {
-			// eslint-disable-next-line no-use-before-define
 			sectionObserver.resume();
 		}, 3 );
 	};
@@ -181,14 +178,12 @@ const main = () => {
 	const tocElement = document.getElementById( TOC_ID );
 	const bodyContent = document.getElementById( BODY_CONTENT_ID );
 
-	/* eslint-disable no-unused-vars */
 	const tableOfContents = setupTableOfContents( tocElement, bodyContent, initSectionObserver );
 
 	const
 		stickyHeaderElement = document.getElementById( stickyHeader.STICKY_HEADER_ID ),
 		stickyIntersection = document.getElementById( 'citizen-page-header-sticky-sentinel' );
 
-	// eslint-disable-next-line es-x/no-optional-chaining
 	const shouldStickyHeader = getComputedStyle( stickyIntersection )?.getPropertyValue( 'display' ) !== 'none';
 	const veActivated = document.documentElement.classList.contains( 've-activated' );
 	const isStickyHeaderAllowed = !!stickyHeaderElement &&

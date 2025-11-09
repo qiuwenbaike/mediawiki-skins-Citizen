@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 /**
  * Initializes the Speculation Rules API for Citizen
  *

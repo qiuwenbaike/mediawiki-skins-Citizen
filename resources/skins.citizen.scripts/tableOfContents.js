@@ -531,7 +531,6 @@ module.exports = function tableOfContents( props ) {
 		// Identifier 'TableOfContents__line' is not in camel case
 		// (template name is 'TableOfContents__line')
 		const partials = {
-			// eslint-disable-next-line camelcase
 			TableOfContents__line: mustacheCompiler.compile( templateTocLine )
 		};
 

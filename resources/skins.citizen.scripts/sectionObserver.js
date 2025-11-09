@@ -54,7 +54,6 @@ module.exports = function sectionObserver( props ) {
 	let /** @type {number | undefined} */ timeoutId;
 	let /** @type {HTMLElement | undefined} */ current;
 
-	// eslint-disable-next-line compat/compat
 	const observer = new IntersectionObserver( ( entries ) => {
 		let /** @type {IntersectionObserverEntry | undefined} */ closestNegativeEntry;
 		let /** @type {IntersectionObserverEntry | undefined} */ closestPositiveEntry;

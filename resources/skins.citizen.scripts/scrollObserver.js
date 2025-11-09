@@ -46,7 +46,6 @@ function initDirectionObserver( onScrollDown, onScrollUp, threshold = 0 ) {
  * @return {IntersectionObserver}
  */
 function initScrollObserver( show, hide ) {
-	/* eslint-disable-next-line compat/compat */
 	return new IntersectionObserver( ( entries ) => {
 		if ( !entries[ 0 ].isIntersecting && entries[ 0 ].boundingClientRect.top < 0 ) {
 			// Viewport has crossed the bottom edge of the target element.

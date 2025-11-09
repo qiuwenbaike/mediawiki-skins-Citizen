@@ -8,7 +8,6 @@
  * Note that site scripts and gadgets might not support Modern JS syntax (T381537, T389736).
  */
 
-/* eslint-disable no-console */
 /* Type declaration is not required, but is included for clarity. */
 const { CommandPaletteCommand, CommandPaletteItem, CommandPaletteNoneAction } = require( '../types.js' );
 

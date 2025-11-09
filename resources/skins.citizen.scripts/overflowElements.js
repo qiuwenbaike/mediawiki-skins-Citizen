@@ -340,7 +340,6 @@ class OverflowElement {
 	 * @return {void}
 	 */
 	setupIntersectionObserver() {
-		// eslint-disable-next-line compat/compat
 		this.intersectionObserver = new IntersectionObserver( ( entries ) => {
 			entries.forEach( ( entry ) => {
 				if ( entry.isIntersecting ) {
@@ -359,7 +358,6 @@ class OverflowElement {
 	 * @return {void}
 	 */
 	setupResizeObserver() {
-		// eslint-disable-next-line compat/compat
 		this.resizeObserver = new ResizeObserver( this.updateState );
 	}
 

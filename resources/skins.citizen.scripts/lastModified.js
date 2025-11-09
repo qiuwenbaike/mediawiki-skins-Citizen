@@ -25,7 +25,6 @@ function init() {
 
 	const SECONDS_IN_MILLISECOND = 1000;
 
-	// eslint-disable-next-line jsdoc/require-returns-check
 	/**
 	 * Formats the time elapsed since a given date in a human-readable relative time format.
 	 *
