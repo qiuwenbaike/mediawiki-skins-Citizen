@@ -12,10 +12,10 @@
 * **[Wikimedia Foundation Core Experiences teams](https://www.mediawiki.org/wiki/Core_Experiences)** for their extensive design research. It drives many of the design decisions in *Citizen* that would otherwise be unable to validate quantitatively.
 * **Various WMF Design Systems teams** for their effort to build, maintain, and implement design systems (MWUI, OOUI, Codex) across the MediaWiki ecosystem. It significantly reduces the work needed for *Citizen* to provide a cohesive design.
 * **Other WMF-deployed skins such as [Vector](https://www.mediawiki.org/wiki/Skin:Vector), [MinervaNeue](https://www.mediawiki.org/wiki/Skin:Minerva_Neue), and [Timeless](https://www.mediawiki.org/wiki/Skin:Timeless)** for some of the features and best practices in a MediaWiki skin. They became a part of the foundation of what *Citizen* has become today.
+* **Various Vitepress projects such as [Mihon](https://github.com/mihonapp/website), [codex-docs](https://github.com/wikimedia/design-codex/tree/main/packages/codex-docs)** for inspirations on how to organize the Vitepress documentation.
 
 ## Included assets ##
 * **[Roboto Flex font](https://github.com/googlefonts/roboto-flex)**
 * **[Noto Sans CJK font](https://github.com/googlefonts/noto-cjk)**
-* **[OOjs UI icons](https://github.com/wikimedia/oojs-ui)**
 
 A gigantic thank you to all the folks above! *Citizen* wouldn't be here today without any of you. If someone is missing, please drop us a note and let us know!

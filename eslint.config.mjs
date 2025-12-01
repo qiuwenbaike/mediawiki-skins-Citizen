@@ -15,7 +15,7 @@ const compat = new FlatCompat({
 export default [
 	{
 		ignores: [
-			".storybook/",
+			"dist/",
 			"docs/",
 			"i18n/",
 			"node_modules/",
@@ -26,9 +26,7 @@ export default [
 			"resources/skins.citizen.scripts.search/wm-typeahead.js",
 		],
 	},
-	...fixupConfigRules(
-		...compat.extends("wikimedia/server")
-	),
+	...fixupConfigRules(...compat.extends("wikimedia/server")),
 	{
 		languageOptions: {
 			ecmaVersion: 11,

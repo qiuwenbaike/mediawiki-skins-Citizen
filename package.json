@@ -8,6 +8,11 @@
 		"lint:js": "eslint --cache --max-warnings 0 .",
 		"lint:styles": "stylelint \"**/*.{less,css,vue}\"",
 		"lint:i18n": "banana-checker --requireLowerCase=0 i18n/",
+		"docs:install": "cd docs && npm install",
+		"docs:dev": "cd docs && npm run docs:dev",
+		"docs:build": "cd docs && npm run docs:build",
+		"docs:preview": "cd docs && npm run docs:preview",
+		"docs:lint": "cd docs && npm run lint",
 		"test": "",
 		"prepare": "husky"
 	},
@@ -32,5 +37,5 @@
 		"types-mediawiki": "2.0.0",
 		"vue": "3.4.27"
 	},
-	"version": "3.10.0"
+	"version": "3.11.0"
 }
