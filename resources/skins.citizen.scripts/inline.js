@@ -13,7 +13,6 @@ window.clientPrefs = () => {
 	let storage;
 	try {
 		// mw.storage is not available in this context
-		// eslint-disable-next-line mediawiki/no-storage
 		storage = localStorage.getItem( 'mwclientpreferences' );
 	} catch ( e ) {
 		// localStorage is not available, ignore
