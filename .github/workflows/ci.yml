@@ -123,8 +123,12 @@ jobs:
             php: 8.3
             coverage: none
             experimental: false
-          - mw: "master"
+          - mw: "REL1_45"
             php: 8.4
+            coverage: none
+            experimental: false
+          - mw: "master"
+            php: 8.5
             coverage: none
             experimental: true
 
@@ -150,9 +154,10 @@ jobs:
           path: |
             mediawiki
             !mediawiki/extensions/
+            !mediawiki/skins/
             !mediawiki/vendor/
             mediawiki/phpunit.xml.dist
-          key: mw_${{ matrix.mw }}-php${{ matrix.php }}-v25
+          key: mw_${{ matrix.mw }}-php${{ matrix.php }}-v27
 
       - name: Cache Composer cache
         uses: actions/cache@v4
@@ -188,7 +193,7 @@ jobs:
           XDEBUG_MODE=coverage composer phpunit -- --testsuite skins --coverage-clover skins/Citizen/coverage/php/coverage.xml skins/Citizen/tests/phpunit --exclude-group Stub
 
       - name: Scan with SonarQube
-        uses: sonarsource/sonarqube-scan-action@v6
+        uses: sonarsource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         # Only one once

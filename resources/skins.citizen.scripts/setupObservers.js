@@ -111,7 +111,9 @@ const setupTableOfContents = ( tocElement, bodyContent, initSectionObserverFn ) 
 	const sectionObserver = initSectionObserverFn( {
 		elements: elements(),
 		topMargin: getDocumentScrollPaddingTop(),
-		onIntersection: getHeadingIntersectionHandler( tableOfContents.changeActiveSection.bind( tableOfContents ) )
+		onIntersection: getHeadingIntersectionHandler(
+			tableOfContents.changeActiveSection.bind( tableOfContents )
+		)
 	} );
 	const updateElements = () => {
 		sectionObserver.resume();
