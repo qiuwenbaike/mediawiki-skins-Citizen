@@ -45,7 +45,7 @@ final class Metadata extends Partial {
 
 		try {
 			$href = $this->urlUtils->expand( wfAppendQuery( wfScript( 'api' ),
-					[ 'action' => 'appmanifest' ] ), PROTO_RELATIVE );
+					[ 'action' => 'webapp-manifest' ] ), PROTO_RELATIVE );
 		} catch ( Exception $e ) {
 			$href = '';
 		}

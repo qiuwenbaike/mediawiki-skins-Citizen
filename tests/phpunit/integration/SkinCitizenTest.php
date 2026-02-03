@@ -72,7 +72,7 @@ class SkinCitizenTest extends MediaWikiIntegrationTestCase {
 		$this->assertContains( [
 			'rel' => 'manifest',
 			'href' => $this->getServiceContainer()->getUrlUtils()->expand( wfAppendQuery( wfScript( 'api' ),
-				[ 'action' => 'appmanifest' ] ), PROTO_RELATIVE ),
+				[ 'action' => 'webapp-manifest' ] ), PROTO_RELATIVE ),
 			], $out->getLinkTags() );
 	}
 
