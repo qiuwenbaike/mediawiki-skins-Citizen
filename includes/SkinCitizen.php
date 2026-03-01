@@ -325,7 +325,7 @@ class SkinCitizen extends SkinMustache {
 			$headerPosition = 'left';
 		}
 
-		$out->addHtmlClasses( 'citizen-header-position-' . $headerPosition );
+		$out->addHtmlClasses( 'citizen-header-position-' . $headerPosition ); */
 	}
 
 	/**
