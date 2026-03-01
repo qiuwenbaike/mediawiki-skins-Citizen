@@ -208,6 +208,7 @@ const init = ( { document, window, mw, IntersectionObserver } ) => {
 		stickyIntersection = document.getElementById( 'citizen-page-header-sticky-sentinel' );
 
 	const shouldStickyHeader = window.getComputedStyle( stickyIntersection )?.getPropertyValue( 'display' ) !== 'none';
+	const veActivated = document.documentElement.classList.contains( 've-activated' );
 	const isStickyHeaderAllowed = !!stickyHeaderElement &&
 		!!stickyIntersection &&
 		shouldStickyHeader &&
