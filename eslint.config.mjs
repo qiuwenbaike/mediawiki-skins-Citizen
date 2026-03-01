@@ -24,6 +24,7 @@ export default [
 			"resources/skins.citizen.scripts.search/typeahead-init.js",
 			"resources/skins.citizen.scripts.search/underscore.partial.js",
 			"resources/skins.citizen.scripts.search/wm-typeahead.js",
+			"vitest.config.js",
 		],
 	},
 	...fixupConfigRules(...compat.extends("wikimedia/server")),
