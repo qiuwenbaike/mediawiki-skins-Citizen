@@ -30,7 +30,7 @@ class ApiWebappManifestTest extends MediaWikiUnitTestCase {
 
 		return new ApiWebappManifest(
 			$mainMock,
-			'appmanifest',
+			'webapp-manifest',
 			$this->createMock( Language::class ),
 			$this->createMock( HttpRequestFactory::class ),
 			$this->createMock( UrlUtils::class ),

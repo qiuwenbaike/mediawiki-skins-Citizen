@@ -1,4 +1,4 @@
-.page-actions {
+.citizen-page-actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var( --space-xxs );
@@ -37,14 +37,6 @@
 			// Only attach dropdown menu to the button on desktop mode
 			position: relative;
 		}
-
-		&-summary {
-			display: grid;
-			place-items: center;
-			width: 2.5rem; // Same width as other buttons
-			height: 2.25rem; // Same height as other buttons
-			border-radius: var( --border-radius-medium );
-		}
 	}
 
 	// Visible page tools styles
@@ -60,14 +52,6 @@
 			padding-left: var( --space-sm );
 			font-size: 0;
 			border-radius: var( --border-radius-medium );
-
-			&:hover {
-				background-color: var( --background-color-button-quiet--hover );
-			}
-
-			&:active {
-				background-color: var( --background-color-button-quiet--active );
-			}
 		}
 	}
 
@@ -96,23 +80,6 @@
 			content: attr( data-counter-text );
 			background: var( --color-surface-0 );
 			border-radius: var( --border-radius-pill );
-		}
-	}
-}
-
-// Edit button
-#ca-edit,
-#ca-ve-edit {
-	> a {
-		color: var( --color-inverted-primary );
-		background-color: var( --background-color-progressive );
-
-		&:hover {
-			background-color: var( --background-color-progressive--hover );
-		}
-
-		&:active {
-			background-color: var( --background-color-progressive--active );
 		}
 	}
 }
@@ -174,7 +141,7 @@
 
 // // To avoid more menu from overflow in narrow screen
 // @media ( max-width: @max-width-breakpoint-tablet ) {
-// 	.page-actions {
+// 	.citizen-page-actions {
 // 		position: fixed;
 // 		right: 0;
 // 		bottom: ~'calc( var( --header-size-block-end ) + max( env( safe-area-inset-bottom ), var( --space-xs ) ) )';
@@ -209,7 +176,7 @@
 // }
 
 @media ( min-width: @min-width-breakpoint-desktop ) {
-	.page-actions {
+	.citizen-page-actions {
 		> .mw-portlet {
 			li > a {
 				gap: var( --space-xs );

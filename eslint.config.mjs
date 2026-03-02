@@ -15,16 +15,17 @@ const compat = new FlatCompat({
 export default [
 	{
 		ignores: [
+			"design/",
 			"dist/",
 			"docs/",
 			"i18n/",
 			"node_modules/",
 			"vendor/",
+			"vitest.config.js",
 			// ES6 files
 			"resources/skins.citizen.scripts.search/typeahead-init.js",
 			"resources/skins.citizen.scripts.search/underscore.partial.js",
 			"resources/skins.citizen.scripts.search/wm-typeahead.js",
-			"vitest.config.js",
 		],
 	},
 	...fixupConfigRules(...compat.extends("wikimedia/server")),
