@@ -21,7 +21,8 @@
 		'footer';
 	// Using auto as min value will cause overflow
 	grid-template-columns: minmax( 0, var( --width-layout ) );
-	gap: 0 var( --space-lg );
+	// gap: 0 var( --space-lg );
+	gap: 0; // Fix gap when ToC is disabled
 	justify-content: center;
 	padding: 0 var( --padding-page );
 	// Bottom margin is added because data-after-content cannot
