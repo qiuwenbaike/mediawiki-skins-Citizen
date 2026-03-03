@@ -58,7 +58,7 @@ export default defineConfig( {
 						link: '/config/',
 					},
 					{
-						text: 'Extensions 🚧',
+						text: 'Extensions',
 						link: '/config/extensions',
 					},
 				],
@@ -80,11 +80,11 @@ export default defineConfig( {
 								text: 'Command palette',
 								link: '/customization/command-palette',
 							},
+							{
+								text: 'Preferences',
+								link: '/customization/preferences',
+							},
 						],
-					},
-					{
-						text: 'Wiki templates 🚧',
-						link: '/customization/wiki-templates',
 					},
 				],
 			},
@@ -95,10 +95,6 @@ export default defineConfig( {
 					{
 						text: 'Showcase',
 						link: '/community/showcase',
-					},
-					{
-						text: 'Tips and tricks 🚧',
-						link: '/community/tips',
 					},
 				],
 			},

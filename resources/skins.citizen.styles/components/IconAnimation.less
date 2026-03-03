@@ -80,4 +80,24 @@ summary ) {
 		transition-duration: var( --transition-duration-base );
 		transition-property: color, transform, opacity;
 	}
+
+	// Override CdxButton color to hide the home icon by default;
+	// .skin-citizen prefix needed to beat .skin-citizen .cdx-button specificity.
+	.skin-citizen & .cdx-button {
+		color: transparent;
+
+		&:hover {
+			color: var( --color-base );
+
+			.mw-logo-icon {
+				opacity: 0;
+			}
+
+			.mw-logo-icon,
+			.citizen-ui-icon {
+				transform: rotate( 360deg );
+				transition-duration: var( --transition-duration-medium );
+			}
+		}
+	}
 }

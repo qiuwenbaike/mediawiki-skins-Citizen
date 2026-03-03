@@ -10,7 +10,7 @@ Run only what's relevant to the files you changed.
 
 | Files changed | Command |
 | --- | --- |
-| `*.php` | `composer test` (lint and style only) then PHPUnit (see below) |
+| `*.php` | `composer preflight` (lint, style, Phan, and PHPUnit) |
 | `*.js`, `*.vue` | `npm run lint:js` then `npm test` |
 | `*.less`, `*.css`, `*.vue` | `npm run lint:styles` |
 | `i18n/` | `npm run lint:i18n` |
@@ -18,7 +18,7 @@ Run only what's relevant to the files you changed.
 
 Auto-fix commands: `composer fix` (PHP), `npm run lint:fix:js` (JS), `npm run lint:fix:styles` (styles), `npm run lint:fix:md` (markdown).
 
-**Preflight**: Run `npm run preflight` to execute all Node-based lints and JS tests in one command. PHP checks (`composer test`, PHPUnit) must be run separately as they require a MediaWiki environment.
+**Preflight**: Run `npm run preflight` to execute all Node-based lints and JS tests in one command. Run `composer preflight` from within a MediaWiki installation to execute all PHP lints, style checks, Phan static analysis, and PHPUnit tests.
 
 **Always run the relevant checks before committing.** Read the full output — PHPCS warnings must be fixed, not just errors. The command exits 0 even with warnings, so do not treat exit code alone as a pass.
 
@@ -26,17 +26,11 @@ Auto-fix commands: `composer fix` (PHP), `npm run lint:fix:js` (JS), `npm run li
 
 This project's standard dev environment is the MediaWiki Docker setup defined in the parent `mediawiki/` directory — see `../../DEVELOPERS.md` for setup instructions. The user may be using a different environment. Ask the user for their dev environment URL and how to run commands if not already known.
 
-### PHPUnit
-
-PHPUnit must be run for all PHP changes. Tests must be executed from within the MediaWiki installation that has this skin loaded, targeting `skins/Citizen/tests/phpunit/`.
-
-Using the standard Docker environment:
+To run composer commands in the standard Docker environment:
 
 ```sh
-docker compose exec mediawiki bash -c "cd /var/www/html/w && composer phpunit -- skins/Citizen/tests/phpunit/path/to/MyTest.php"
+docker compose exec mediawiki bash -c "cd /var/www/html/w/skins/Citizen && composer preflight"
 ```
-
-If using a different dev environment, adapt the command to run `composer phpunit` from the MediaWiki root.
 
 ### Browser testing
 
@@ -52,6 +46,7 @@ When your test plan includes steps that require a browser (e.g., verifying scrip
 - All files start with `declare( strict_types=1 );`
 - Use native PHP types (properties, parameters, return values); use PHPDoc only for collection types like `string[]`
 - Avoid boolean parameters; use class constants or named arrays instead
+- Always use MediaWiki-namespaced imports (`use MediaWiki\Title\Title;`, `use MediaWiki\Content\TextContent;`), never legacy shims (`use Title;`) — the old `class_alias` names may be removed in future MW versions
 - PHPUnit test class names match the class under test (`FooTest` for `Foo`); use `@covers` with FQN
 
 ### JavaScript

@@ -89,6 +89,7 @@
 	}
 }
 
+/*
 .citizen-feature-pure-black-clientpref-1 {
 	:root.skin-theme-clientpref-night& {
 		.feature-pure-black();
@@ -100,6 +101,7 @@
 		}
 	}
 }
+*/
 
 .citizen-feature-autohide-navigation-clientpref-1 {
 	@media ( max-width: @max-width-breakpoint-tablet ) {
@@ -184,3 +186,18 @@
 		animation-iteration-count: 1 !important;
 	}
 }
+
+// T400838
+/*
+.citizen-feature-image-dimming-clientpref-1 {
+	:root.skin-theme-clientpref-night& {
+		--filter-image-brightness: brightness( 0.8 );
+	}
+
+	@media ( prefers-color-scheme: dark ) {
+		:root.skin-theme-clientpref-os& {
+			--filter-image-brightness: brightness( 0.8 );
+		}
+	}
+}
+*/
