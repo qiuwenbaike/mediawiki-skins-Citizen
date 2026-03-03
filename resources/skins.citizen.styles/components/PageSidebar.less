@@ -7,7 +7,7 @@
 		grid-area: sidebar;
 		gap: var( --space-sm );
 		margin-top: ~'calc( var( --height-sticky-header ) + var( --space-sm ) )'; // align with first paragraph
-		contain: strict;
+		// contain: strict;
 	}
 
 	.citizen-menu__heading,
@@ -22,8 +22,6 @@
 }
 
 #citizen-sidebar-lastmod {
-	@media ( max-width: @max-width-breakpoint-tablet ) {
-		// Duplicated with footer already
-		display: none;
-	}
+	// Duplicated with footer already
+	display: none;
 }
