@@ -3,7 +3,7 @@
 	.mixin-citizen-font-styles( 'small' );
 	position: fixed;
 	bottom: ~'calc( var( --header-size-block-end ) + max( env( safe-area-inset-bottom ), var( --space-xs ) ) )';
-	left: 0;
+	left: ~'max( env( safe-area-inset-left ), var( --space-xs ) )';
 	z-index: @z-index-sticky; // Keep ToC above sticky header and page action, but below site header
 	pointer-events: none; // HACK: Make background clickable
 
