@@ -51,7 +51,6 @@
 		}
 	}
 }
-*/
 
 .citizen-feature-custom-font-size-clientpref-small {
 	.citizen-body {
@@ -89,7 +88,6 @@
 	}
 }
 
-/*
 .citizen-feature-pure-black-clientpref-1 {
 	:root.skin-theme-clientpref-night& {
 		.feature-pure-black();
@@ -201,3 +199,11 @@
 	}
 }
 */
+
+:root& {
+	--width-layout: 1080px;
+
+	@media screen and ( min-width: @min-width-breakpoint-desktop-wide ) {
+		--width-layout: 1600px;
+	}
+}
