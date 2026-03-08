@@ -64,10 +64,9 @@ describe( 'SMW mode', () => {
 			expect( smwMode.triggers ).toEqual( [ '/smw:' ] );
 		} );
 
-		it( 'should have tokenPattern with position any, modeId smw, and activeIn smw', () => {
-			expect( smwMode.tokenPattern.position ).toBe( 'any' );
+		it( 'should have tokenPattern with correct modeId', () => {
 			expect( smwMode.tokenPattern.modeId ).toBe( 'smw' );
-			expect( smwMode.tokenPattern.activeIn ).toBe( 'smw' );
+			expect( typeof smwMode.tokenPattern.match ).toBe( 'function' );
 		} );
 
 		it( 'should have getResults function', () => {
@@ -86,6 +85,31 @@ describe( 'SMW mode', () => {
 			expect( result ).toEqual( { action: 'none' } );
 		} );
 
+		it( 'should return updateQuery action for smw-category items', () => {
+			const result = smwMode.onResultSelect( { type: 'smw-category', label: 'City' } );
+
+			expect( result ).toEqual( { action: 'updateQuery', payload: '[[Category:City]]' } );
+		} );
+
+		it( 'should return updateQuery action for smw-property items', () => {
+			const result = smwMode.onResultSelect( { type: 'smw-property', label: 'Located in' } );
+
+			expect( result ).toEqual( { action: 'updateQuery', payload: '[[Located in::' } );
+		} );
+
+		it( 'should return updateQuery action for smw-value items', () => {
+			const result = smwMode.onResultSelect( {
+				type: 'smw-value',
+				label: 'Germany',
+				value: 'Located in'
+			} );
+
+			expect( result ).toEqual( {
+				action: 'updateQuery',
+				payload: '[[Located in::Germany]]'
+			} );
+		} );
+
 		it( 'should have emptyState with title, description, and icon', () => {
 			expect( smwMode.emptyState ).toBeDefined();
 			expect( smwMode.emptyState.title ).toBe( 'citizen-command-palette-mode-smw-empty-title' );
@@ -93,11 +117,25 @@ describe( 'SMW mode', () => {
 			expect( smwMode.emptyState.icon ).toBe( smwMode.icon );
 		} );
 
-		it( 'should return malformed state for incomplete query', () => {
+		it( 'should return no-categories state for incomplete category query', () => {
 			const result = smwMode.noResults( '[[Category:Ci', [] );
 
-			expect( result.title ).toBe( 'citizen-command-palette-mode-smw-malformed-title' );
-			expect( result.description ).toBe( 'citizen-command-palette-mode-smw-malformed-description' );
+			expect( result.title ).toBe( 'citizen-command-palette-mode-smw-nocategories-title' );
+			expect( result.description ).toBe( 'citizen-command-palette-mode-smw-nocategories-description' );
+		} );
+
+		it( 'should return no-values state for incomplete value query', () => {
+			const result = smwMode.noResults( '[[Located in::Ger', [] );
+
+			expect( result.title ).toBe( 'citizen-command-palette-mode-smw-novalues-title' );
+			expect( result.description ).toBe( 'citizen-command-palette-mode-smw-novalues-description' );
+		} );
+
+		it( 'should return no-properties state for incomplete property query', () => {
+			const result = smwMode.noResults( '[[SomeText', [] );
+
+			expect( result.title ).toBe( 'citizen-command-palette-mode-smw-noproperties-title' );
+			expect( result.description ).toBe( 'citizen-command-palette-mode-smw-noproperties-description' );
 		} );
 
 		it( 'should return no-results state for valid but empty query', () => {
@@ -141,11 +179,77 @@ describe( 'SMW mode', () => {
 			expect( mockGet ).not.toHaveBeenCalled();
 		} );
 
-		it( 'should return empty array for incomplete conditions', async () => {
+		it( 'should fetch category suggestions for incomplete category condition', async () => {
+			mockGet.mockResolvedValue( {
+				query: {
+					City: { label: 'City', key: 'City' }
+				}
+			} );
+
 			const result = await smwMode.getResults( '[[Category:Ci' );
 
-			expect( result ).toEqual( [] );
-			expect( mockGet ).not.toHaveBeenCalled();
+			expect( mockGet ).toHaveBeenCalledWith( {
+				action: 'smwbrowse',
+				browse: 'category',
+				params: JSON.stringify( { search: 'Ci', limit: 10 } ),
+				maxage: 1200,
+				smaxage: 1200
+			} );
+			expect( result ).toHaveLength( 1 );
+			expect( result[ 0 ] ).toMatchObject( {
+				id: 'citizen-command-palette-item-smw-category-0',
+				type: 'smw-category',
+				label: 'City',
+				highlightQuery: true
+			} );
+		} );
+
+		it( 'should fetch value suggestions for incomplete value condition', async () => {
+			mockGet.mockResolvedValue( {
+				query: [ 'Germany', 'Greece' ]
+			} );
+
+			const result = await smwMode.getResults( '[[Located in::Ger' );
+
+			expect( mockGet ).toHaveBeenCalledWith( {
+				action: 'smwbrowse',
+				browse: 'pvalue',
+				params: JSON.stringify( { search: 'Ger', property: 'Located in', limit: 10 } ),
+				maxage: 1200,
+				smaxage: 1200
+			} );
+			expect( result ).toHaveLength( 2 );
+			expect( result[ 0 ] ).toMatchObject( {
+				id: 'citizen-command-palette-item-smw-value-0',
+				type: 'smw-value',
+				label: 'Germany',
+				value: 'Located in',
+				highlightQuery: true
+			} );
+			expect( result[ 1 ] ).toMatchObject( {
+				id: 'citizen-command-palette-item-smw-value-1',
+				type: 'smw-value',
+				label: 'Greece',
+				value: 'Located in',
+				highlightQuery: true
+			} );
+		} );
+
+		it( 'should execute Ask query with printout in freetext', async () => {
+			mockGet.mockResolvedValue( { query: { results: {} } } );
+			const tokens = [
+				{ modeId: 'smw', raw: '[[Category:City]]' }
+			];
+
+			await smwMode.getResults( '|?Population', undefined, tokens );
+
+			expect( mockGet ).toHaveBeenCalledWith( {
+				action: 'ask',
+				query: '[[Category:City]]|?Population|limit=10',
+				format: 'json',
+				maxage: 1200,
+				smaxage: 1200
+			} );
 		} );
 
 		it( 'should return empty array when freetext contains non-Ask text after tokens', async () => {
@@ -180,7 +284,9 @@ describe( 'SMW mode', () => {
 			expect( mockGet ).toHaveBeenCalledWith( {
 				action: 'ask',
 				query: '[[Category:City]]|limit=10',
-				format: 'json'
+				format: 'json',
+				maxage: 1200,
+				smaxage: 1200
 			} );
 			expect( result ).toEqual( [
 				{
@@ -210,7 +316,9 @@ describe( 'SMW mode', () => {
 			expect( mockGet ).toHaveBeenCalledWith( {
 				action: 'ask',
 				query: '[[Category:City]][[Located in::Germany]][[Has population::>1000000]]|limit=10',
-				format: 'json'
+				format: 'json',
+				maxage: 1200,
+				smaxage: 1200
 			} );
 		} );
 
@@ -220,6 +328,125 @@ describe( 'SMW mode', () => {
 			const result = await smwMode.getResults( '[[Category:City]]' );
 
 			expect( result ).toEqual( [] );
+		} );
+
+		it( 'should include detail pairs when printouts are in the response', async () => {
+			mockGet.mockResolvedValue( {
+				query: {
+					results: {
+						Berlin: {
+							fulltext: 'Berlin',
+							fullurl: 'https://example.org/wiki/Berlin',
+							printouts: {
+								Population: [ { raw: '3748148' } ],
+								'Located in': [ { fulltext: 'Germany', fullurl: 'https://example.org/wiki/Germany' } ]
+							}
+						}
+					}
+				}
+			} );
+			const tokens = [
+				{ modeId: 'smw', raw: '[[Category:City]]' }
+			];
+
+			const result = await smwMode.getResults( '|?Population|?Located in', undefined, tokens );
+
+			expect( result ).toHaveLength( 1 );
+			expect( result[ 0 ].detail ).toEqual( {
+				pairs: [
+					{ label: 'Population', value: '3748148' },
+					{ label: 'Located in', value: 'Germany' }
+				]
+			} );
+		} );
+
+		it( 'should join multi-value printout properties with comma', async () => {
+			mockGet.mockResolvedValue( {
+				query: {
+					results: {
+						Berlin: {
+							fulltext: 'Berlin',
+							fullurl: 'https://example.org/wiki/Berlin',
+							printouts: {
+								'Located in': [
+									{ fulltext: 'Germany' },
+									{ fulltext: 'Europe' }
+								]
+							}
+						}
+					}
+				}
+			} );
+			const tokens = [
+				{ modeId: 'smw', raw: '[[Category:City]]' }
+			];
+
+			const result = await smwMode.getResults( '|?Located in', undefined, tokens );
+
+			expect( result[ 0 ].detail.pairs[ 0 ].value ).toBe( 'Germany, Europe' );
+		} );
+
+		it( 'should not include detail when response has no printouts', async () => {
+			mockGet.mockResolvedValue( {
+				query: {
+					results: {
+						Berlin: {
+							fulltext: 'Berlin',
+							fullurl: 'https://example.org/wiki/Berlin'
+						}
+					}
+				}
+			} );
+
+			const result = await smwMode.getResults( '[[Category:City]]' );
+
+			expect( result[ 0 ].detail ).toBeUndefined();
+		} );
+
+		it( 'should handle falsy printout values like raw: 0', async () => {
+			mockGet.mockResolvedValue( {
+				query: {
+					results: {
+						Berlin: {
+							fulltext: 'Berlin',
+							fullurl: 'https://example.org/wiki/Berlin',
+							printouts: {
+								Score: [ { raw: 0 } ]
+							}
+						}
+					}
+				}
+			} );
+			const tokens = [
+				{ modeId: 'smw', raw: '[[Category:City]]' }
+			];
+
+			const result = await smwMode.getResults( '|?Score', undefined, tokens );
+
+			expect( result[ 0 ].detail.pairs[ 0 ].value ).toBe( '0' );
+		} );
+
+		it( 'should handle empty printout arrays gracefully', async () => {
+			mockGet.mockResolvedValue( {
+				query: {
+					results: {
+						Berlin: {
+							fulltext: 'Berlin',
+							fullurl: 'https://example.org/wiki/Berlin',
+							printouts: {
+								Population: []
+							}
+						}
+					}
+				}
+			} );
+			const tokens = [
+				{ modeId: 'smw', raw: '[[Category:City]]' }
+			];
+
+			const result = await smwMode.getResults( '|?Population', undefined, tokens );
+
+			expect( result[ 0 ].detail.pairs[ 0 ].value ).toBe( '' );
 		} );
 
 		it( 'should ignore non-smw tokens', async () => {
@@ -234,7 +461,9 @@ describe( 'SMW mode', () => {
 			expect( mockGet ).toHaveBeenCalledWith( {
 				action: 'ask',
 				query: '[[Category:City]]|limit=10',
-				format: 'json'
+				format: 'json',
+				maxage: 1200,
+				smaxage: 1200
 			} );
 		} );
 	} );

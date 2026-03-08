@@ -260,6 +260,7 @@
 				"resources/skins.citizen.commandPalette/components/CommandPaletteKeyboardHints.vue",
 				"resources/skins.citizen.commandPalette/components/CommandPaletteList.vue",
 				"resources/skins.citizen.commandPalette/components/CommandPaletteListItem.vue",
+				"resources/skins.citizen.commandPalette/components/CommandPaletteDetailPanel.vue",
 				"resources/skins.citizen.commandPalette/components/CommandPaletteListItemActions.vue",
 				"resources/skins.citizen.commandPalette/components/CommandPaletteListItemContent.vue",
 				{
@@ -353,10 +354,17 @@
 		"skins.citizen.commandPalette.smw": {
 			"packageFiles": [
 				"resources/skins.citizen.commandPalette.smw/init.js",
+				"resources/skins.citizen.commandPalette.smw/queryParser.js",
+				{
+					"name": "resources/skins.citizen.commandPalette.smw/config.json",
+					"callback": "MediaWiki\\Skins\\Citizen\\Hooks\\ResourceLoaderHooks::getCitizenCommandPaletteResourceLoaderConfig"
+				},
 				{
 					"name": "resources/skins.citizen.commandPalette.smw/icons.json",
 					"callback": "MediaWiki\\ResourceLoader\\CodexModule::getIcons",
 					"callbackParam": [
+						"cdxIconAdd",
+						"cdxIconTag",
 						"cdxIconWikitext"
 					]
 				}
@@ -368,10 +376,19 @@
 				"citizen-command-palette-mode-smw-empty-title",
 				"citizen-command-palette-mode-smw-malformed-description",
 				"citizen-command-palette-mode-smw-malformed-title",
+				"citizen-command-palette-mode-smw-nocategories-description",
+				"citizen-command-palette-mode-smw-nocategories-title",
+				"citizen-command-palette-mode-smw-noproperties-description",
+				"citizen-command-palette-mode-smw-noproperties-title",
 				"citizen-command-palette-mode-smw-noresults-description",
 				"citizen-command-palette-mode-smw-noresults-title",
+				"citizen-command-palette-mode-smw-novalues-description",
+				"citizen-command-palette-mode-smw-novalues-title",
 				"citizen-command-palette-mode-smw-placeholder",
-				"citizen-command-palette-type-smw"
+				"citizen-command-palette-type-smw",
+				"citizen-command-palette-type-smw-category",
+				"citizen-command-palette-type-smw-property",
+				"citizen-command-palette-type-smw-value"
 			]
 		},
 		"skins.citizen.icons": {

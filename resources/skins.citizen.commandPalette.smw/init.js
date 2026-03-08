@@ -2,7 +2,23 @@
  * Semantic MediaWiki Ask query mode for the command palette.
  * Loaded conditionally only when SMW is installed.
  */
-const { cdxIconWikitext } = require( './icons.json' );
+const { cdxIconAdd, cdxIconTag, cdxIconWikitext } = require( './icons.json' );
+const config = require( './config.json' );
+const parseIncompleteCondition = require( './queryParser.js' );
+
+/**
+ * Builds a state object for emptyState / noResults display.
+ *
+ * @param {string} key The suffix for the i18n message key (e.g. 'noresults').
+ * @return {{ title: string, description: string, icon: string }}
+ */
+function makeState( key ) {
+	return {
+		title: mw.message( 'citizen-command-palette-mode-smw-' + key + '-title' ).text(),
+		description: mw.message( 'citizen-command-palette-mode-smw-' + key + '-description' ).text(),
+		icon: cdxIconWikitext
+	};
+}
 
 /**
  * Matches a completed SMW condition at the start of text.
@@ -29,6 +45,46 @@ function matchSmwCondition( text ) {
 }
 
 /**
+ * Extracts a display string from a single SMW printout value.
+ * Page-type values have a fulltext property; others use the raw value.
+ *
+ * @param {Object|string} value A single printout value from the API.
+ * @return {string} Display string.
+ */
+function formatPrintoutValue( value ) {
+	if ( typeof value === 'object' && value !== null ) {
+		if ( value.fulltext !== undefined ) {
+			return String( value.fulltext );
+		}
+		if ( value.raw !== undefined ) {
+			return String( value.raw );
+		}
+		return String( value );
+	}
+	return String( value );
+}
+
+/**
+ * Converts SMW printouts from the Ask API into detail pairs.
+ *
+ * @param {Object} printouts The printouts object from a result subject.
+ * @return {Object|undefined} Detail object with pairs array, or undefined.
+ */
+function adaptPrintouts( printouts ) {
+	if ( !printouts || typeof printouts !== 'object' ) {
+		return undefined;
+	}
+	const pairs = Object.entries( printouts ).map( ( [ label, values ] ) => ( {
+		label,
+		value: Array.isArray( values ) ? values.map( formatPrintoutValue ).join( ', ' ) : ''
+	} ) );
+	if ( pairs.length === 0 ) {
+		return undefined;
+	}
+	return { pairs };
+}
+
+/**
  * Adapts a single SMW Ask API result into a CommandPaletteItem.
  *
  * @param {Object} subject The result subject from the SMW API.
@@ -36,12 +92,86 @@ function matchSmwCondition( text ) {
  * @return {Object} A CommandPaletteItem.
  */
 function adaptSmwResult( subject, index ) {
-	return {
+	const item = {
 		id: 'citizen-command-palette-item-smw-' + index,
 		type: 'smw',
 		label: subject.fulltext,
 		url: subject.fullurl
 	};
+	const detail = adaptPrintouts( subject.printouts );
+	if ( detail ) {
+		item.detail = detail;
+	}
+	return item;
+}
+
+/**
+ * Creates a fetcher for SMW browse suggestions.
+ *
+ * @param {string} browse The smwbrowse type ('property' or 'category').
+ * @param {string} typePrefix The item type prefix (e.g. 'smw-property').
+ * @param {string} icon The icon for result items.
+ * @return {function(string): Promise<Array>} Fetcher function.
+ */
+function createSmwBrowseFetcher( browse, typePrefix, icon ) {
+	return function ( fragment ) {
+		return new mw.Api().get( {
+			action: 'smwbrowse',
+			browse: browse,
+			params: JSON.stringify( { search: fragment, limit: 10 } ),
+			maxage: config.wgSearchSuggestCacheExpiry,
+			smaxage: config.wgSearchSuggestCacheExpiry
+		} ).then( ( data ) => {
+			const items = Object.values( data.query || {} );
+			return items.map( ( item, index ) => ( {
+				id: 'citizen-command-palette-item-' + typePrefix + '-' + index,
+				type: typePrefix,
+				thumbnailIcon: icon,
+				label: item.label,
+				highlightQuery: true
+			} ) );
+		} ).catch( ( error ) => {
+			if ( error !== 'AbortError' ) {
+				mw.log.error( '[commandPalette] SMW ' + browse + ' query failed:', error );
+			}
+			return [];
+		} );
+	};
+}
+
+const fetchPropertySuggestions = createSmwBrowseFetcher( 'property', 'smw-property', cdxIconTag );
+const fetchCategorySuggestions = createSmwBrowseFetcher( 'category', 'smw-category', cdxIconTag );
+
+/**
+ * Fetches SMW value suggestions for a specific property.
+ *
+ * @param {string} fragment The partial value to search for.
+ * @param {string} property The property name to fetch values for.
+ * @return {Promise<Array>} Array of CommandPaletteItems.
+ */
+function fetchValueSuggestions( fragment, property ) {
+	return new mw.Api().get( {
+		action: 'smwbrowse',
+		browse: 'pvalue',
+		params: JSON.stringify( { search: fragment, property: property, limit: 10 } ),
+		maxage: config.wgSearchSuggestCacheExpiry,
+		smaxage: config.wgSearchSuggestCacheExpiry
+	} ).then( ( data ) => {
+		const values = data.query || [];
+		return values.map( ( value, index ) => ( {
+			id: 'citizen-command-palette-item-smw-value-' + index,
+			type: 'smw-value',
+			thumbnailIcon: cdxIconAdd,
+			label: value,
+			value: property,
+			highlightQuery: true
+		} ) );
+	} ).catch( ( error ) => {
+		if ( error !== 'AbortError' ) {
+			mw.log.error( '[commandPalette] SMW pvalue query failed:', error );
+		}
+		return [];
+	} );
 }
 
 /**
@@ -61,19 +191,17 @@ function buildAskQuery( subQuery, tokens ) {
 /**
  * Tests whether an Ask query string is valid to send to the API.
  * The query must contain at least one complete condition ([[...]]),
- * and any text outside of conditions must be empty or whitespace-only.
- * This prevents sending malformed queries like
+ * and any text outside of conditions and printout statements must be
+ * empty or whitespace-only. This prevents sending malformed queries like
  * "[[Category:City]]some freetext" which the API would reject.
- *
- * Known limitation: printout statements (e.g. |?Property) are not
- * supported — they would be rejected as non-condition text, and would
- * also conflict with the |limit=10 parameter appended by getSmwResults.
  *
  * @param {string} askQuery The combined Ask query string.
  * @return {boolean}
  */
 function isCompleteAskQuery( askQuery ) {
-	const stripped = askQuery.replace( /\[\[[^\]]+\]\]/g, '' );
+	const stripped = askQuery
+		.replace( /\[\[[^\]]+\]\]/g, '' )
+		.replace( /\|\?[^|[\]]+/g, '' );
 	return stripped.trim() === '' && /\[\[[^\]]+\]\]/.test( askQuery );
 }
 
@@ -87,6 +215,21 @@ function isCompleteAskQuery( askQuery ) {
  * @return {Promise<Array>} Array of CommandPaletteItems.
  */
 async function getSmwResults( subQuery, _signal, tokens ) {
+	// Check for incomplete condition — show suggestions instead of Ask results
+	const incomplete = parseIncompleteCondition( subQuery );
+	if ( incomplete ) {
+		if ( incomplete.stage === 'property' ) {
+			return fetchPropertySuggestions( incomplete.fragment );
+		}
+		if ( incomplete.stage === 'category' ) {
+			return fetchCategorySuggestions( incomplete.fragment );
+		}
+		if ( incomplete.stage === 'value' ) {
+			return fetchValueSuggestions( incomplete.fragment, incomplete.property );
+		}
+		return [];
+	}
+
 	const askQuery = buildAskQuery( subQuery, tokens || [] );
 	if ( !askQuery.trim() || !isCompleteAskQuery( askQuery ) ) {
 		return [];
@@ -97,7 +240,9 @@ async function getSmwResults( subQuery, _signal, tokens ) {
 		const data = await api.get( {
 			action: 'ask',
 			query: askQuery + '|limit=10',
-			format: 'json'
+			format: 'json',
+			maxage: config.wgSearchSuggestCacheExpiry,
+			smaxage: config.wgSearchSuggestCacheExpiry
 		} );
 
 		const results = data?.query?.results;
@@ -123,25 +268,23 @@ module.exports = {
 	label: mw.message( 'citizen-command-palette-command-smw-label' ).text(),
 	description: mw.message( 'citizen-command-palette-command-smw-description' ).text(),
 	placeholder: mw.message( 'citizen-command-palette-mode-smw-placeholder' ).text(),
-	emptyState: {
-		title: mw.message( 'citizen-command-palette-mode-smw-empty-title' ).text(),
-		description: mw.message( 'citizen-command-palette-mode-smw-empty-description' ).text(),
-		icon: cdxIconWikitext
-	},
+	emptyState: makeState( 'empty' ),
 	noResults( query, tokens ) {
+		const incomplete = parseIncompleteCondition( query );
+		const stageKeys = {
+			property: 'noproperties',
+			category: 'nocategories',
+			value: 'novalues'
+		};
+		if ( incomplete && stageKeys[ incomplete.stage ] ) {
+			return makeState( stageKeys[ incomplete.stage ] );
+		}
+
 		const fullQuery = buildAskQuery( query, tokens || [] );
 		if ( !isCompleteAskQuery( fullQuery ) ) {
-			return {
-				title: mw.message( 'citizen-command-palette-mode-smw-malformed-title' ).text(),
-				description: mw.message( 'citizen-command-palette-mode-smw-malformed-description' ).text(),
-				icon: cdxIconWikitext
-			};
+			return makeState( 'malformed' );
 		}
-		return {
-			title: mw.message( 'citizen-command-palette-mode-smw-noresults-title' ).text(),
-			description: mw.message( 'citizen-command-palette-mode-smw-noresults-description' ).text(),
-			icon: cdxIconWikitext
-		};
+		return makeState( 'noresults' );
 	},
 	tokenPattern: {
 		modeId: 'smw',
@@ -151,8 +294,17 @@ module.exports = {
 	},
 	getResults: getSmwResults,
 	onResultSelect( item ) {
-		return item.url ?
-			{ action: 'navigate', payload: item.url } :
-			{ action: 'none' };
+		switch ( item.type ) {
+			case 'smw-value':
+				return { action: 'updateQuery', payload: '[[' + item.value + '::' + item.label + ']]' };
+			case 'smw-property':
+				return { action: 'updateQuery', payload: '[[' + item.label + '::' };
+			case 'smw-category':
+				return { action: 'updateQuery', payload: '[[Category:' + item.label + ']]' };
+			default:
+				return item.url ?
+					{ action: 'navigate', payload: item.url } :
+					{ action: 'none' };
+		}
 	}
 };
