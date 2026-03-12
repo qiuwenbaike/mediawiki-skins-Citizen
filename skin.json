@@ -48,7 +48,7 @@
 					"responsive": true,
 					"supportsMwHeading": true,
 					"templateSectionLinks": "SectionLinks",
-					"toc": true,
+					"toc": false,
 					"wrapSiteNotice": true,
 					"link": {
 						"text-wrapper": {
