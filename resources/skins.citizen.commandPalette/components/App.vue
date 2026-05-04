@@ -529,7 +529,6 @@ module.exports = exports = defineComponent( {
 	}
 
 	&__body {
-		flex: 1;
 		min-height: 0;
 		overflow: hidden;
 		border-top: var( --border-subtle );
@@ -580,16 +579,6 @@ module.exports = exports = defineComponent( {
 	&__no-results {
 		padding: var( --space-md ) var( --citizen-command-palette-side-padding );
 		text-align: center;
-	}
-
-	.citizen-command-palette-list-item:not( [ data-type='action' ] ) {
-		opacity: 1;
-		transition: opacity var( --transition-duration-medium );
-		transition-delay: calc( 0.05s * ( sibling-index() - 1 ) );
-
-		@starting-style {
-			opacity: 0;
-		}
 	}
 }
 

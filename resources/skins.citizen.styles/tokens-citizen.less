@@ -38,7 +38,7 @@
 	// Used to offset sticky elements with sticky header
 	// This is overriden by inline styles in the html element when sticky header is active
 	// Need the unit for calc() (#1058)
-	--height-sticky-header: 0px;
+	--height-sticky-header: 0;
 	// Width or height of citizen-header, depending on the orientation
 	--header-size: @header-size;
 	// Max-height allowed for header card, 20vh is left for closing affordnance
@@ -126,24 +126,24 @@
 	// Header position tokens
 	// Unit is required for calc() functions
 	--header-direction: row;
-	--header-size-inline-start: 0px;
-	--header-size-inline-end: 0px;
+	--header-size-inline-start: 0;
+	--header-size-inline-end: 0;
 	--header-size-block-start: var( --header-size );
-	--header-size-block-end: 0px;
+	--header-size-block-end: 0;
 	--header-inset-block-start: 0;
-	--header-inset-block-end: auto;
-	--header-inset-inline-start: 0px;
-	--header-inset-inline-end: 0px;
-	--header-border-block-start-width: 0px;
+	--header-inset-block-end: 0;
+	--header-inset-inline-start: 0;
+	--header-inset-inline-end: 0;
+	--header-border-block-start-width: 0;
 	--header-border-block-end-width: var( --border-width-base );
-	--header-border-inline-start-width: 0px;
-	--header-border-inline-end-width: 0px;
+	--header-border-inline-start-width: 0;
+	--header-border-inline-end-width: 0;
 
 	// Always default to bottom in mobile for now
 	@media ( max-width: @max-width-breakpoint-tablet ) {
 		--header-direction: row;
-		--header-inset-inline-start: 0px;
-		--header-inset-inline-end: 0px;
+		--header-inset-inline-start: 0;
+		--header-inset-inline-end: 0;
 		--header-size-block-end: var( --header-size );
 		--header-inset-block-start: 0;
 		--header-inset-block-end: auto;
@@ -153,15 +153,14 @@
 	&.citizen-header-position {
 		@media ( min-width: @min-width-breakpoint-desktop ) {
 			--header-direction: row;
-			--header-inset-inline-start: 0px;
-			--header-inset-inline-end: 0px;
+			--header-inset-inline-start: 0;
+			--header-inset-inline-end: 0;
 			--header-size-block-start: var( --header-size );
 			--header-inset-block-start: 0;
 			--header-inset-block-end: auto;
 			--header-border-block-end-width: var( --border-width-base );
 		}
 	}
-
 
 	// Derived header offset tokens
 	// These combine the static header size with the dynamic sticky header height
