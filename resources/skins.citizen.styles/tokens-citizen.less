@@ -131,7 +131,7 @@
 	--header-size-block-start: var( --header-size );
 	--header-size-block-end: 0;
 	--header-inset-block-start: 0;
-	--header-inset-block-end: 0;
+	--header-inset-block-end: auto;
 	--header-inset-inline-start: 0;
 	--header-inset-inline-end: 0;
 	--header-border-block-start-width: 0;
@@ -139,7 +139,7 @@
 	--header-border-inline-start-width: 0;
 	--header-border-inline-end-width: 0;
 
-	// Always default to bottom in mobile for now
+	// Always default to top in mobile for now
 	@media ( max-width: @max-width-breakpoint-tablet ) {
 		--header-direction: row;
 		--header-inset-inline-start: 0;
