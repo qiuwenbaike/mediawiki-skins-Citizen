@@ -21,6 +21,7 @@ export default [
 			"i18n/",
 			"node_modules/",
 			"vendor/",
+			"scripts",
 			"vitest.config.js",
 			// ES6 files
 			"resources/skins.citizen.scripts.search/typeahead-init.js",
