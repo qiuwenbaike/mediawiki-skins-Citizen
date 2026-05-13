@@ -43,13 +43,17 @@ function initBodyContent(
 	bodyContent, { document, window, mw, IntersectionObserver, ResizeObserver }
 ) {
 	const
-		// { createSections } = require( './sections.js' ),
+		/*
+		{ createSections } = require( './sections.js' ),
+		 */
 		overflowElements = require( './overflowElements/index.js' ),
 		{ createContentEnhancements } = require( './contentEnhancements.js' ),
 		config = require( './config.json' );
 
 	// Collapsable sections
-	// createSections( { document, bodyContent } ).init();
+	/*
+	createSections( { document, bodyContent } ).init();
+	 */
 	// Overflow element enhancements
 	overflowElements.init( {
 		document, window, mw, IntersectionObserver, ResizeObserver,
@@ -65,7 +69,7 @@ function initBodyContent(
  */
 function main( window ) {
 	const
-		// config = require( './config.json' ),
+		config = require( './config.json' ),
 		{ createEchoUpgrade } = require( './echo.js' ),
 		search = require( './search.js' ),
 		dropdown = require( './dropdown.js' ),
