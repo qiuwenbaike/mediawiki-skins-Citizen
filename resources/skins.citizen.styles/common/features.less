@@ -58,7 +58,6 @@
 }
 
 // Dark-theme switches live inside each color-token module.
-
 /*
 .citizen-feature-custom-font-size-clientpref-small {
 	.citizen-body {
@@ -107,8 +106,8 @@
 		}
 	}
 }
-
 */
+
 .citizen-feature-autohide-navigation-clientpref-1 {
 	@media ( max-width: @max-width-breakpoint-tablet ) {
 		.citizen-header,
@@ -136,38 +135,40 @@
 			transition-property: opacity;
 		}
 
-		// .citizen-scroll--down {
-		// 	// stylelint-disable-next-line length-zero-no-unit -- Need the unit for calc() (#1058)
-		// 	--height-sticky-header: 0px !important;
-		// 	// Just do not modify --header-size-block-end
-		// 	// Because we have already used `transform` to hide the header
-		// 	// If we use bottom in the meantime, the transition will not work.
-		//
-		// 	// header should use the same timing function
-		// 	.citizen-sticky-header-container,
-		// 	.citizen-header,
-		// 	.citizen-toc,
-		// 	.citizen-page-actions {
-		// 		transition-timing-function: var( --transition-timing-function-ease-in );
-		// 	}
+		/*
+		.citizen-scroll--down {
+			// stylelint-disable-next-line length-zero-no-unit -- Need the unit for calc() (#1058)
+			--height-sticky-header: 0px !important;
+			// Just do not modify --header-size-block-end
+			// Because we have already used `transform` to hide the header
+			// If we use bottom in the meantime, the transition will not work.
 
-		// 	.citizen-header {
-		// 		transform: translate3d( 0, 100%, 0 );
-		// 	}
+			// header should use the same timing function
+			.citizen-sticky-header-container,
+			.citizen-header,
+			.citizen-toc,
+			.citizen-page-actions {
+				transition-timing-function: var( --transition-timing-function-ease-in );
+			}
 
-		// 	.citizen-toc,
-		// 	.citizen-page-actions {
-		// 		pointer-events: none;
-		// 		opacity: 0;
-		// 		transform: translate3d( 0, var( --header-offset-block-end ), 0 );
-		// 	}
+			.citizen-header {
+				transform: translate3d( 0, 100%, 0 );
+			}
 
-		// 	&.citizen-sticky-header-visible {
-		// 		.citizen-sticky-header-container {
-		// 			transform: translate3d( 0, -100%, 0 );
-		// 		}
-		// 	}
-		// }
+			.citizen-toc,
+			.citizen-page-actions {
+				pointer-events: none;
+				opacity: 0;
+				transform: translate3d( 0, var( --header-offset-block-end ), 0 );
+			}
+
+			&.citizen-sticky-header-visible {
+				.citizen-sticky-header-container {
+					transform: translate3d( 0, -100%, 0 );
+				}
+			}
+		}
+		*/
 	}
 }
 
@@ -207,7 +208,7 @@
 }
 */
 
-:root& {
+:root {
 	--width-layout: 1080px;
 
 	@media screen and ( min-width: @min-width-breakpoint-desktop-wide ) {
