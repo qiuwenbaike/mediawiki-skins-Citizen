@@ -1,14 +1,16 @@
 .citizen-drawer {
 	&__card {
 		.mixin-citizen-header-card( start );
-		transform-origin: var( --transform-origin-offset-start ) var( --transform-origin-offset-start );
+		top: 100%;
+		right: unset;
+		bottom: unset;
+		left: 0;
 
 		@media ( min-width: @min-width-breakpoint-desktop ) {
 			top: 100%;
 			right: unset;
 			bottom: unset;
 			left: 0;
-			transform-origin: var( --transform-origin-offset-start ) var( --transform-origin-offset-start );
 		}
 	}
 

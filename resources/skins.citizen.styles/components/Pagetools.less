@@ -19,11 +19,12 @@
 			display: grid;
 			gap: var( --space-xs );
 			max-height: 60vh;
-			padding: var( --space-xs ) 0;
-			transform-origin: var( --transform-origin-offset-end ) var( --transform-origin-offset-start );
+			// Mobile toolbar sits at the top; card expands downward.
+			.mixin-citizen-card-expand( down );
 
-			&#citizen-languages__card {
-				right: auto;
+			@media ( min-width: @min-width-breakpoint-desktop ) {
+				top: 100%;
+				.mixin-citizen-card-expand( down );
 			}
 
 			&-content {

@@ -41,7 +41,8 @@
 			padding: 0;
 			overflow: hidden;
 			opacity: 0;
-			transition-timing-function: var( --transition-timing-function-ease-out );
+			transition-timing-function:
+ var( --transition-timing-function-ease-out );
 			transition-duration: var( --transition-duration-medium );
 			transition-property: opacity, height, padding;
 		}
@@ -64,7 +65,9 @@
 		background-color: var( --color-progressive );
 		border-radius: var( --border-width-thick );
 		// Use transform for GPU-composited animation instead of top/height
-		transform: translateY( var( --indicator-top, 0 ) ) scaleY( var( --indicator-scale, 0 ) );
+		transform:
+ translateY( var( --indicator-top, 0 ) )
+			scaleY( var( --indicator-scale, 0 ) );
 		transform-origin: top center;
 		transition-timing-function: var( --transition-timing-function-ease-out );
 		transition-duration: var( --transition-duration-medium );
@@ -136,55 +139,58 @@
 	}
 }
 
-.client-js .citizen-toc {
-	position: fixed;
-	bottom: ~'calc( var( --header-size-block-end ) + max( env( safe-area-inset-bottom ), var( --space-xs ) ) )';
-	left: 0;
-	z-index: @z-index-sticky; // Keep ToC above sticky header and page action, but below site header
-	pointer-events: none; // HACK: Make background clickable
+.client-js {
+	.citizen-toc {
+		position: fixed;
+		bottom: ~'calc( var( --header-size-block-end ) + max( env( safe-area-inset-bottom ), var( --space-xs ) ) )';
+		left: 0;
+		z-index: @z-index-sticky; // Keep ToC above sticky header and page action, but below site header
+		pointer-events: none; // HACK: Make background clickable
 
-	&-card {
-		// Get consistent margin
-		bottom: ~'calc( 100% - var( --space-xs ) )';
-		width: max-content;
-		// This is not bulletproof since it will get covered by page header
-		// in extremely short height. but it should be good for now
-		max-height: ~'calc( var( --header-card-maxheight ) - 8rem )';
-		padding: var( --space-xs );
-		transform-origin: var( --transform-origin-offset-start ) var( --transform-origin-offset-end );
-	}
-
-	.citizen-dropdown {
-		&-summary {
-			box-sizing: border-box;
-			display: grid;
-			place-content: center;
-			width: var( --toolbar-size );
-			height: var( --toolbar-size );
-			margin: var( --space-xs );
-			pointer-events: auto; // HACK: Make button clickable
-			background-color: var( --color-surface-1 );
-			border: 1px solid var( --border-color-base );
-			border-radius: var( --border-radius-medium );
-			box-shadow: var( --box-shadow-large );
-
-			// The hover state colors are not great but it will do for now
-			&:hover {
-				background: ~'linear-gradient( var( --background-color-button-quiet--hover ), var( --background-color-button-quiet--hover ) ) var( --color-surface-1 )';
-			}
-
-			&:active {
-				background: ~'linear-gradient( var( --background-color-button-quiet--active ), var( --background-color-button-quiet--active ) ) var( --color-surface-1 )';
-			}
+		&-card {
+			// Get consistent margin
+			bottom: ~'calc( 100% - var( --space-xs ) )';
+			width: max-content;
+			// This is not bulletproof since it will get covered by page header
+			// in extremely short height. but it should be good for now
+			max-height: ~'calc( var( --header-card-maxheight ) - 8rem )';
+			padding: var( --space-xs );
+			// Floating button at the bottom; card expands upward.
+			.mixin-citizen-card-expand( up );
 		}
 
-		&-details[ open ] {
-			+ .citizen-menu__card {
-				pointer-events: auto; // HACK: Make ToC clickable after ToC is expanded
+		.citizen-dropdown {
+			&-summary {
+				box-sizing: border-box;
+				display: grid;
+				place-content: center;
+				width: var( --toolbar-size );
+				height: var( --toolbar-size );
+				margin: var( --space-xs );
+				pointer-events: auto; // HACK: Make button clickable
+				background-color: var( --color-surface-1 );
+				border: 1px solid var( --border-color-base );
+				border-radius: var( --border-radius-medium );
+				box-shadow: var( --box-shadow-large );
+
+				// The hover state colors are not great but it will do for now
+				&:hover {
+					background: ~'linear-gradient( var( --background-color-button-quiet--hover ), var( --background-color-button-quiet--hover ) ) var( --color-surface-1 )';
+				}
+
+				&:active {
+					background: ~'linear-gradient( var( --background-color-button-quiet--active ), var( --background-color-button-quiet--active ) ) var( --color-surface-1 )';
+				}
 			}
 
-			> .citizen-dropdown-summary {
-				background: ~'linear-gradient( var( --background-color-button-quiet--active ), var( --background-color-button-quiet--active ) ) var( --color-surface-1 )';
+			&-details[ open ] {
+				+ .citizen-menu__card {
+					pointer-events: auto; // HACK: Make ToC clickable after ToC is expanded
+				}
+
+				> .citizen-dropdown-summary {
+					background: ~'linear-gradient( var( --background-color-button-quiet--active ), var( --background-color-button-quiet--active ) ) var( --color-surface-1 )';
+				}
 			}
 		}
 	}
