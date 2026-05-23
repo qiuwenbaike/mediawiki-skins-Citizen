@@ -40,7 +40,7 @@ describe( 'search', () => {
 			buildSearchDom();
 			init( { window, document, triggerOpen } );
 
-			dispatchKeydown( document.body, { code: 'Slash' } );
+			dispatchKeydown( document.body, { code: 'Slash', ctrlKey: true } );
 
 			expect( triggerOpen ).toHaveBeenCalled();
 		} );
@@ -92,7 +92,7 @@ describe( 'search', () => {
 			document.body.appendChild( contentEditable );
 
 			[ textInput, textarea, select, contentEditable ].forEach( ( el ) => {
-				dispatchKeydown( el, { code: 'Slash' } );
+				dispatchKeydown( el, { code: 'Slash', ctrlKey: true } );
 			} );
 
 			expect( triggerOpen ).not.toHaveBeenCalled();
@@ -106,14 +106,14 @@ describe( 'search', () => {
 			checkbox.setAttribute( 'type', 'checkbox' );
 			document.body.appendChild( checkbox );
 
-			dispatchKeydown( checkbox, { code: 'Slash' } );
+			dispatchKeydown( checkbox, { code: 'Slash', ctrlKey: true } );
 
 			expect( triggerOpen ).toHaveBeenCalledTimes( 1 );
 
 			const button = document.createElement( 'button' );
 			document.body.appendChild( button );
 
-			dispatchKeydown( button, { code: 'Slash' } );
+			dispatchKeydown( button, { code: 'Slash', ctrlKey: true } );
 
 			expect( triggerOpen ).toHaveBeenCalledTimes( 2 );
 		} );

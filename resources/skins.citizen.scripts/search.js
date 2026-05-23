@@ -29,7 +29,8 @@ function bindOpenOnSlash( window, triggerOpen ) {
 	const onExpandOnSlash = ( /** @type {KeyboardEvent} */ event ) => {
 		const isKeyPressed = () => {
 			// "/" key is standard on many sites
-			if ( event.code === 'Slash' ) {
+			// "Ctrl" + "/" (or "Command" + "/" on Mac)
+			if ( ( event.ctrlKey || event.metaKey ) && event.code === 'Slash' ) {
 				return true;
 			// "Ctrl" + "K" (or "Command" + "K" on Mac)
 			} else if ( ( event.ctrlKey || event.metaKey ) && event.code === 'KeyK' ) {
