@@ -32,7 +32,8 @@
 					"overscroll-behavior": [ "contain" ],
 					"text-spacing-trim": [ "normal" ],
 					"text-wrap": [ "pretty" ],
-					"user-select": [ "none" ]
+					"user-select": [ "none" ],
+					"@supports": [ "allow-keywords" ]
 				}
 			}
 		],

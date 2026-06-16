@@ -41,8 +41,7 @@
 			padding: 0;
 			overflow: hidden;
 			opacity: 0;
-			transition-timing-function:
- var( --transition-timing-function-ease-out );
+			transition-timing-function: var( --transition-timing-function-ease-out );
 			transition-duration: var( --transition-duration-medium );
 			transition-property: opacity, height, padding;
 		}
@@ -65,9 +64,7 @@
 		background-color: var( --color-progressive );
 		border-radius: var( --border-width-thick );
 		// Use transform for GPU-composited animation instead of top/height
-		transform:
- translateY( var( --indicator-top, 0 ) )
-			scaleY( var( --indicator-scale, 0 ) );
+		transform: translateY( var( --indicator-top, 0 ) ) scaleY( var( --indicator-scale, 0 ) );
 		transform-origin: top center;
 		transition-timing-function: var( --transition-timing-function-ease-out );
 		transition-duration: var( --transition-duration-medium );
