@@ -2,7 +2,8 @@
  * Citizen tokens — LEGACY light theme base
  * CSS variables for the base theme
  *
- * Frozen as of new pipeline introduction. Active when $wgCitizenUseNewToken=false.
+ * Frozen as of new pipeline introduction. Active when the preview
+ * channel is off ($wgCitizenPreview). citizen-v4-remove
  *
  * TODO: Remove HSL fallback when OKLCH is supported in all browsers
  * TODO: Use CSS relative color syntax when supported in all browsers
@@ -138,6 +139,7 @@
 	--color-disabled-hsl__s: 85%;
 	--color-disabled-hsl__l: 60%;
 
+	// stylelint-disable-next-line plugin/use-baseline
 	@supports ( color: oklch( 100% 0 0 ) ) {
 		--color-surface-0: ~'oklch( var( --color-surface-0-oklch__l ) var( --color-surface-0-oklch__c ) var( --color-progressive-oklch__h ) )';
 		--color-surface-1: ~'oklch( var( --color-surface-1-oklch__l ) var( --color-surface-1-oklch__c ) var( --color-progressive-oklch__h ) )';

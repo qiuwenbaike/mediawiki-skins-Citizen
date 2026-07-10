@@ -12,6 +12,7 @@
 	// reaching into legacy-only OKLCH derivation primitives. Works in both
 	// legacy and new color modes (both define --color-surface-N), and picks up
 	// the active surface value rather than legacy's idea of it.
+	// stylelint-disable-next-line plugin/use-baseline
 	@supports ( color: oklch( 100% 0 0 ) ) {
 		background-color: ~'color-mix( in oklch, var( --color-surface-@{surface} ) calc( var( --opacity-glass ) * 100% ), transparent )';
 	}
