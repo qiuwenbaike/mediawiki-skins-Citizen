@@ -55,19 +55,25 @@ function createConfig( overrides = {} ) {
 function createMockObservers() {
 	let intersectionCallback;
 	const intersectionObserve = vi.fn();
+	const intersectionInstances = [];
 	// Must use function (not arrow) so it can be called with new
 	const MockIntersectionObserver = vi.fn( function ( cb ) {
 		intersectionCallback = cb;
 		this.observe = intersectionObserve;
+		this.disconnect = vi.fn();
+		intersectionInstances.push( this );
 	} );
 
 	let resizeCallback;
 	const resizeObserve = vi.fn();
 	const resizeUnobserve = vi.fn();
+	const resizeInstances = [];
 	const MockResizeObserver = vi.fn( function ( cb ) {
 		resizeCallback = cb;
 		this.observe = resizeObserve;
 		this.unobserve = resizeUnobserve;
+		this.disconnect = vi.fn();
+		resizeInstances.push( this );
 	} );
 
 	return {
@@ -76,8 +82,10 @@ function createMockObservers() {
 		getIntersectionCallback: () => intersectionCallback,
 		getResizeCallback: () => resizeCallback,
 		intersectionObserve,
+		intersectionInstances,
 		resizeObserve,
-		resizeUnobserve
+		resizeUnobserve,
+		resizeInstances
 	};
 }
 
@@ -230,8 +238,11 @@ describe( 'overflowElements', () => {
 			} );
 
 			const table = bodyContent.querySelector( 'table' );
+			const intersectionCb = observers.getIntersectionCallback();
 
-			// resume() is called during init — resize observer should observe the element
+			// resume() happens once the element intersects
+			intersectionCb( [ { isIntersecting: true, target: table } ] );
+
 			expect( observers.resizeObserve ).toHaveBeenCalledWith( table );
 
 			// The content element should have a scroll listener
@@ -245,15 +256,14 @@ describe( 'overflowElements', () => {
 			const navRemoveSpy = vi.spyOn( navEl, 'removeEventListener' );
 
 			// Trigger intersection observer to pause then resume
-			const intersectionCb = observers.getIntersectionCallback();
-			intersectionCb( [ { isIntersecting: false } ] );
+			intersectionCb( [ { isIntersecting: false, target: table } ] );
 
 			expect( contentRemoveSpy ).toHaveBeenCalledWith( 'scroll', expect.any( Function ) );
 			expect( observers.resizeUnobserve ).toHaveBeenCalledWith( table );
 			expect( navRemoveSpy ).toHaveBeenCalledWith( 'click', expect.any( Function ) );
 
 			// Resume again
-			intersectionCb( [ { isIntersecting: true } ] );
+			intersectionCb( [ { isIntersecting: true, target: table } ] );
 
 			expect( contentAddSpy ).toHaveBeenCalledWith( 'scroll', expect.any( Function ) );
 			expect( navAddSpy ).toHaveBeenCalledWith( 'click', expect.any( Function ) );
@@ -278,6 +288,11 @@ describe( 'overflowElements', () => {
 				bodyContent,
 				config
 			} );
+
+			// Nav click listeners bind on intersection
+			observers.getIntersectionCallback()( [
+				{ isIntersecting: true, target: bodyContent.querySelector( 'table' ) }
+			] );
 
 			const contentEl = document.querySelector( '.citizen-overflow-content' );
 			const wrapperEl = document.querySelector( '.citizen-overflow-wrapper' );
@@ -319,6 +334,341 @@ describe( 'overflowElements', () => {
 			expect( contentEl.scrollLeft ).toBe( 0 );
 		} );
 
+		it( 'should not measure or observe resize until the element intersects', () => {
+			const bodyContent = createBodyContent( '<table class="wikitable"></table>' );
+			const table = bodyContent.querySelector( 'table' );
+			let scrollWidthReads = 0;
+			Object.defineProperty( table, 'scrollWidth', {
+				configurable: true,
+				get() {
+					scrollWidthReads++;
+					return 1000;
+				}
+			} );
+			const observers = createMockObservers();
+
+			init( {
+				document,
+				window: createMockWindow(),
+				mw,
+				IntersectionObserver: observers.IntersectionObserver,
+				ResizeObserver: observers.ResizeObserver,
+				bodyContent,
+				config: createConfig()
+			} );
+
+			// Nothing is measured or resize-observed at boot
+			expect( observers.resizeObserve ).not.toHaveBeenCalled();
+			expect( scrollWidthReads ).toBe( 0 );
+
+			// Scrolling into view starts resize observation
+			observers.getIntersectionCallback()( [ { isIntersecting: true, target: table } ] );
+
+			expect( observers.resizeObserve ).toHaveBeenCalledWith( table );
+			expect( scrollWidthReads ).toBe( 0 );
+
+			// Measurement happens on resize observer delivery
+			observers.getResizeCallback()( [ { target: table } ] );
+
+			expect( scrollWidthReads ).toBeGreaterThan( 0 );
+			const wrapper = document.querySelector( '.citizen-overflow-wrapper' );
+			expect( wrapper.classList.contains( 'citizen-overflow--right' ) ).toBe( true );
+		} );
+
+		it( 'should not measure an element that never intersects', () => {
+			const bodyContent = createBodyContent( '<table class="wikitable"></table>' );
+			const table = bodyContent.querySelector( 'table' );
+			let scrollWidthReads = 0;
+			Object.defineProperty( table, 'scrollWidth', {
+				configurable: true,
+				get() {
+					scrollWidthReads++;
+					return 1000;
+				}
+			} );
+			const observers = createMockObservers();
+
+			init( {
+				document,
+				window: createMockWindow(),
+				mw,
+				IntersectionObserver: observers.IntersectionObserver,
+				ResizeObserver: observers.ResizeObserver,
+				bodyContent,
+				config: createConfig()
+			} );
+
+			// Off-screen at boot: pause before any resume must be safe
+			observers.getIntersectionCallback()( [ { isIntersecting: false, target: table } ] );
+
+			expect( scrollWidthReads ).toBe( 0 );
+			expect( observers.resizeObserve ).not.toHaveBeenCalled();
+			expect( observers.resizeUnobserve ).toHaveBeenCalledWith( table );
+		} );
+
+		it( 'should share one IntersectionObserver and one ResizeObserver across all elements', () => {
+			const bodyContent = createBodyContent(
+				'<table class="wikitable"></table><table class="wikitable"></table>'
+			);
+			const observers = createMockObservers();
+
+			init( {
+				document,
+				window: createMockWindow(),
+				mw,
+				IntersectionObserver: observers.IntersectionObserver,
+				ResizeObserver: observers.ResizeObserver,
+				bodyContent,
+				config: createConfig()
+			} );
+
+			expect( observers.IntersectionObserver ).toHaveBeenCalledTimes( 1 );
+			expect( observers.ResizeObserver ).toHaveBeenCalledTimes( 1 );
+			const tables = bodyContent.querySelectorAll( 'table.wikitable' );
+			expect( observers.intersectionObserve ).toHaveBeenCalledWith( tables[ 0 ] );
+			expect( observers.intersectionObserve ).toHaveBeenCalledWith( tables[ 1 ] );
+		} );
+
+		it( 'should not sync sticky header columns until the resize observer fires', () => {
+			const bodyContent = createBodyContent( `
+				<table class="wikitable">
+					<thead>
+						<tr class="citizen-overflow-sticky-header">
+							<th>Column 1</th>
+							<th>Column 2</th>
+						</tr>
+					</thead>
+				</table>
+			` );
+			const table = bodyContent.querySelector( 'table' );
+			const ths = table.querySelectorAll( 'th' );
+			const boundingRectSpies = [];
+			ths.forEach( ( th ) => {
+				const spy = vi.fn( () => ( { width: 120 } ) );
+				th.getBoundingClientRect = spy;
+				boundingRectSpies.push( spy );
+			} );
+			const observers = createMockObservers();
+
+			init( {
+				document,
+				window: createMockWindow(),
+				mw,
+				IntersectionObserver: observers.IntersectionObserver,
+				ResizeObserver: observers.ResizeObserver,
+				bodyContent,
+				config: createConfig()
+			} );
+
+			// No column measurement at boot
+			boundingRectSpies.forEach( ( spy ) => {
+				expect( spy ).not.toHaveBeenCalled();
+			} );
+
+			observers.getIntersectionCallback()( [ { isIntersecting: true, target: table } ] );
+			observers.getResizeCallback()( [ { target: table } ] );
+
+			boundingRectSpies.forEach( ( spy ) => {
+				expect( spy ).toHaveBeenCalled();
+			} );
+			const cols = document.querySelectorAll( '.citizen-overflow-content-sticky-header col' );
+			expect( cols ).toHaveLength( 2 );
+			expect( cols[ 0 ].style.minWidth ).toBe( '120px' );
+			expect( cols[ 1 ].style.minWidth ).toBe( '120px' );
+		} );
+
+		it( 'should batch all column reads before any column writes across tables', () => {
+			const stickyTable = `
+				<table class="wikitable">
+					<thead>
+						<tr class="citizen-overflow-sticky-header">
+							<th>A</th>
+							<th>B</th>
+						</tr>
+					</thead>
+				</table>
+			`;
+			const bodyContent = createBodyContent( stickyTable + stickyTable );
+			const tables = bodyContent.querySelectorAll( 'table.wikitable' );
+			const log = [];
+			tables.forEach( ( table ) => {
+				table.querySelectorAll( 'th' ).forEach( ( th ) => {
+					th.getBoundingClientRect = () => {
+						log.push( 'read' );
+						return { width: 100 };
+					};
+				} );
+			} );
+			const observers = createMockObservers();
+
+			init( {
+				document,
+				window: createMockWindow(),
+				mw,
+				IntersectionObserver: observers.IntersectionObserver,
+				ResizeObserver: observers.ResizeObserver,
+				bodyContent,
+				config: createConfig()
+			} );
+
+			const cols = document.querySelectorAll( '.citizen-overflow-content-sticky-header col' );
+			cols.forEach( ( col ) => {
+				vi.spyOn( col.style, 'setProperty' ).mockImplementation( () => {
+					log.push( 'write' );
+				} );
+			} );
+
+			observers.getIntersectionCallback()( [
+				{ isIntersecting: true, target: tables[ 0 ] },
+				{ isIntersecting: true, target: tables[ 1 ] }
+			] );
+			observers.getResizeCallback()( [
+				{ target: tables[ 0 ] },
+				{ target: tables[ 1 ] }
+			] );
+
+			expect( log.filter( ( e ) => e === 'read' ) ).toHaveLength( 4 );
+			expect( log.filter( ( e ) => e === 'write' ) ).toHaveLength( 4 );
+			// Every geometry read happens before the first style write
+			expect( log.indexOf( 'write' ) ).toBeGreaterThan( log.lastIndexOf( 'read' ) );
+		} );
+
+		it( 'should keep measurements aligned when a batch mixes sticky and non-sticky elements', () => {
+			const stickyTable = `
+				<table class="wikitable">
+					<thead>
+						<tr class="citizen-overflow-sticky-header">
+							<th>A</th>
+							<th>B</th>
+						</tr>
+					</thead>
+				</table>
+			`;
+			const plainTable = '<table class="wikitable"><tbody><tr><td>plain</td></tr></tbody></table>';
+			const bodyContent = createBodyContent( stickyTable + plainTable );
+			const tables = bodyContent.querySelectorAll( 'table.wikitable' );
+			tables[ 0 ].querySelectorAll( 'th' ).forEach( ( th ) => {
+				th.getBoundingClientRect = () => ( { width: 150 } );
+			} );
+			const observers = createMockObservers();
+
+			init( {
+				document,
+				window: createMockWindow(),
+				mw,
+				IntersectionObserver: observers.IntersectionObserver,
+				ResizeObserver: observers.ResizeObserver,
+				bodyContent,
+				config: createConfig()
+			} );
+
+			observers.getIntersectionCallback()( [
+				{ isIntersecting: true, target: tables[ 0 ] },
+				{ isIntersecting: true, target: tables[ 1 ] }
+			] );
+			// Deliver with the non-sticky element first to stress index alignment
+			observers.getResizeCallback()( [
+				{ target: tables[ 1 ] },
+				{ target: tables[ 0 ] }
+			] );
+
+			const cols = document.querySelectorAll( '.citizen-overflow-content-sticky-header col' );
+			expect( cols ).toHaveLength( 2 );
+			expect( cols[ 0 ].style.minWidth ).toBe( '150px' );
+			expect( cols[ 1 ].style.minWidth ).toBe( '150px' );
+		} );
+
+		it( 'should stay idempotent on repeated intersection without an intervening pause', () => {
+			const bodyContent = createBodyContent( '<table class="wikitable"></table>' );
+			const table = bodyContent.querySelector( 'table' );
+			const observers = createMockObservers();
+
+			init( {
+				document,
+				window: createMockWindow( {
+					matchMedia: vi.fn( () => ( { matches: true } ) )
+				} ),
+				mw,
+				IntersectionObserver: observers.IntersectionObserver,
+				ResizeObserver: observers.ResizeObserver,
+				bodyContent,
+				config: createConfig()
+			} );
+
+			const contentEl = document.querySelector( '.citizen-overflow-content' );
+			const contentAddSpy = vi.spyOn( contentEl, 'addEventListener' );
+			const intersectionCb = observers.getIntersectionCallback();
+
+			intersectionCb( [ { isIntersecting: true, target: table } ] );
+			intersectionCb( [ { isIntersecting: true, target: table } ] );
+
+			// Same handler reference every time: rebinding stays a no-op for the DOM
+			expect( contentAddSpy ).toHaveBeenCalledTimes( 2 );
+			const handlers = contentAddSpy.mock.calls.map( ( call ) => call[ 1 ] );
+			expect( handlers[ 0 ] ).toBe( handlers[ 1 ] );
+			expect( observers.resizeObserve ).toHaveBeenCalledTimes( 2 );
+			expect( observers.resizeObserve ).toHaveBeenNthCalledWith( 2, table );
+		} );
+
+		// Note: overflowElements keeps its current observer pair in module
+		// state that persists across tests (matching the production
+		// ResourceLoader singleton). The first init() in a test may therefore
+		// disconnect a pair left behind by an earlier test — assertions here
+		// only use this test's own mock instances, so that bleed is inert.
+		it( 'should disconnect the previous generation of observers on re-init', () => {
+			const observers = createMockObservers();
+			const deps = {
+				document,
+				window: createMockWindow(),
+				mw,
+				IntersectionObserver: observers.IntersectionObserver,
+				ResizeObserver: observers.ResizeObserver,
+				config: createConfig()
+			};
+			const firstContent = createBodyContent( '<table class="wikitable"></table>' );
+
+			init( { ...deps, bodyContent: firstContent } );
+
+			// Simulate a wikipage.content re-fire with replaced content
+			firstContent.remove();
+			const secondContent = createBodyContent( '<table class="wikitable"></table>' );
+
+			init( { ...deps, bodyContent: secondContent } );
+
+			expect( observers.intersectionInstances ).toHaveLength( 2 );
+			expect( observers.intersectionInstances[ 0 ].disconnect ).toHaveBeenCalled();
+			expect( observers.resizeInstances[ 0 ].disconnect ).toHaveBeenCalled();
+			// The live generation stays connected
+			expect( observers.intersectionInstances[ 1 ].disconnect ).not.toHaveBeenCalled();
+			expect( observers.resizeInstances[ 1 ].disconnect ).not.toHaveBeenCalled();
+		} );
+
+		it( 'should disconnect previous observers even when new content has no overflow elements', () => {
+			const observers = createMockObservers();
+			const deps = {
+				document,
+				window: createMockWindow(),
+				mw,
+				IntersectionObserver: observers.IntersectionObserver,
+				ResizeObserver: observers.ResizeObserver,
+				config: createConfig()
+			};
+			const firstContent = createBodyContent( '<table class="wikitable"></table>' );
+
+			init( { ...deps, bodyContent: firstContent } );
+
+			firstContent.remove();
+			const emptyContent = createBodyContent( '<p>No tables here</p>' );
+
+			init( { ...deps, bodyContent: emptyContent } );
+
+			// No new generation is constructed, but the old one is torn down
+			expect( observers.intersectionInstances ).toHaveLength( 1 );
+			expect( observers.resizeInstances ).toHaveLength( 1 );
+			expect( observers.intersectionInstances[ 0 ].disconnect ).toHaveBeenCalled();
+			expect( observers.resizeInstances[ 0 ].disconnect ).toHaveBeenCalled();
+		} );
+
 		it( 'should handle only navButton clicks and distinguish left from right', () => {
 			const bodyContent = createBodyContent( '<table class="wikitable"></table>' );
 			const rAF = vi.fn( ( cb ) => cb() );
@@ -339,6 +689,11 @@ describe( 'overflowElements', () => {
 				config
 			} );
 
+			// Nav click listeners bind on intersection
+			observers.getIntersectionCallback()( [
+				{ isIntersecting: true, target: bodyContent.querySelector( 'table' ) }
+			] );
+
 			const contentEl = document.querySelector( '.citizen-overflow-content' );
 			const wrapperEl = document.querySelector( '.citizen-overflow-wrapper' );
 			const navEl = document.querySelector( '.citizen-overflow-nav' );
@@ -353,8 +708,6 @@ describe( 'overflowElements', () => {
 
 			navEl.dispatchEvent( new Event( 'click', { bubbles: false } ) );
 
-			// rAF is also called by createOverflowState.updateState during resume,
-			// so check that no scroll happened
 			expect( contentEl.scrollLeft ).toBe( 100 );
 
 			// Click on the right navButton — should scroll right

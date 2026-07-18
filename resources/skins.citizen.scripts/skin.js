@@ -10,9 +10,14 @@
 function deferredTasks( { document, window, mw, navigator, HTMLScriptElement } ) {
 	const { createSpeculationRules } = require( './speculationRules.js' );
 	// const { createServiceWorker } = require( './serviceWorker.js' );
+	const { createPerformanceMode } = require( './performance.js' );
 
 	createSpeculationRules( { document, mw, HTMLScriptElement } ).init();
 	// createServiceWorker( { mw, navigator } ).register();
+	// The WebGL probe is main-thread heavy on first visit; the server-rendered
+	// default (performance mode on) is the conservative state, so flipping it
+	// off for capable devices can safely wait for idle.
+	createPerformanceMode( { document, mw } ).init();
 
 	window.addEventListener( 'beforeunload', () => {
 		// Set up loading indicator
@@ -76,7 +81,7 @@ function main( window ) {
 		{ createLastModified } = require( './lastModified.js' ),
 		{ createShare } = require( './share.js' ),
 		setupObservers = require( './setupObservers.js' ),
-		{ createPerformanceMode } = require( './performance.js' ),
+		deferUntilFrame = require( './deferUntilFrame.js' ),
 		/*
 		{ createPreferences } = require( './preferences.js' ),
 		 */
@@ -87,7 +92,13 @@ function main( window ) {
 
 	search.init( { window, document, triggerOpen: commandPalette.triggerOpen } );
 	createNotifications( { document, mw } ).init();
-	setupObservers.init( { document, window, mw, IntersectionObserver } );
+	// Observer setup reads geometry (getComputedStyle, full heading sweep).
+	// Wait two frames so the reads hit the clean layout left by the first
+	// paint instead of forcing one before it; the observers drive scroll-time
+	// UI, so nothing is lost during those frames.
+	deferUntilFrame( () => {
+		setupObservers.init( { document, window, mw, IntersectionObserver } );
+	}, 2 );
 	dropdown.init( { document, window } );
 	createLastModified( { document, Intl } ).init();
 	createShare( {
@@ -97,7 +108,6 @@ function main( window ) {
 		navigator,
 		mode: config.wgCitizenShareMode
 	} ).init();
-	createPerformanceMode( { document, mw } ).init();
 
 	mw.hook( 'wikipage.content' ).add( ( content ) => {
 		// content is a jQuery object

@@ -22,6 +22,16 @@ $wgCitizenHeaderPosition = 'left';
 
 **Values**: `'left'`, `'right'`, `'top'`, `'bottom'`
 
+### `$wgCitizenHeaderPositionMobile`
+
+Determines where the site header appears below the desktop breakpoint, tablets included. Side placements do not fit small screens, so only the top and bottom edges are supported.
+
+```php [LocalSettings.php]
+$wgCitizenHeaderPositionMobile = 'bottom';
+```
+
+**Values**: `'top'`, `'bottom'`
+
 ### `$wgCitizenThemeDefault`
 
 Sets the default color theme for new visitors.
@@ -35,6 +45,9 @@ $wgCitizenThemeDefault = 'auto';
 - `'auto'`: Matches the user's system or browser preference
 - `'light'`: Always starts in light mode
 - `'dark'`: Always starts in dark mode
+- `'black'`: Always starts in the Black theme
+
+The option also accepts any theme value registered on the wiki, e.g. `'ocean'` for a [custom theme](../customization/theming.md#creating-a-theme). The config itself is not gated — but the Black theme and custom themes ride the [preview channel](../contribute/preview-channel.md) until Citizen 4. Outside the preview, `'black'` falls back to an equivalent dark rendering, and custom themes won't render correctly.
 
 ### `$wgCitizenEnableCollapsibleSections`
 
