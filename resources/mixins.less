@@ -283,3 +283,29 @@
 		mask-image: linear-gradient( @direction, @color1, @color2, @color3, @color4 );
 	}
 }
+
+// Standard float treatment for floated content. Shared by the legacy float
+// classes (common/hacks.less), the overflow wrapper float modifiers
+// (components/OverflowElements.less), and the media/thumbnail floats
+// (skinning/content.media-common.less) so they cannot drift.
+// Floats are physical by MediaWiki convention, so each declaration carries
+// its own /* @noflip */ so CSSJanus does not flip them for RTL wikis.
+// Callers own only the tablet media query. Only the literal keywords
+// `left`/`right` are accepted; any other value emits nothing.
+.mixin-citizen-float-declarations( @direction ) when ( @direction = right ) {
+	/* @noflip */
+	float: right;
+	/* @noflip */
+	clear: right;
+	/* @noflip */
+	margin-left: var( --space-lg );
+}
+
+.mixin-citizen-float-declarations( @direction ) when ( @direction = left ) {
+	/* @noflip */
+	float: left;
+	/* @noflip */
+	clear: left;
+	/* @noflip */
+	margin-right: var( --space-lg );
+}
