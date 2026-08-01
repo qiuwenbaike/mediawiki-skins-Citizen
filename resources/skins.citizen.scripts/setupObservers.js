@@ -64,7 +64,12 @@ const init = ( { document, window, mw, IntersectionObserver } ) => {
 		!veActivated;
 
 	const stickyHeaderInstance = isStickyHeaderAllowed ?
-		new StickyHeader( { stickyHeaderElement, document } ) :
+		new StickyHeader( {
+			stickyHeaderElement,
+			document,
+			window,
+			requestIdleCallback: mw.requestIdleCallback
+		} ) :
 		null;
 
 	const scrollDirectionObserver = createDirectionObserver( {

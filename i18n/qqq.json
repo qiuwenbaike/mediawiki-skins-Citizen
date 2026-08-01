@@ -47,6 +47,7 @@
 	"citizen-footer-tagline": "Default text for the site footer tagline.",
 	"citizen-action-addsection": "Used in the Citizen skin. See for example {{canonicalurl:Talk:Main_Page|useskin=vector}}\n{{Identical|Add topic}}. Same as vector-action-addsection in Vector skin.",
 	"citizen-jumptotop": "Label for link to jump to top of page",
+	"citizen-jumptocontent": "Label for the link at the very top of the page that skips the site header and jumps straight to the page content. Visually hidden until it receives keyboard focus.",
 	"citizen-toc-toggle-button-label": "Accessible label for the toggle button that expands/collapses a table of contents subsection. $1 is the section heading text.",
 	"citizen-search-empty-desc": "Helper text in the search suggestion when there are no search query",
 	"citizen-search-noresults-title": "Title in the search suggestion when there are no search results",
@@ -217,6 +218,7 @@
 	"citizen-command-palette-mode-user-placeholder": "Placeholder text shown in the command palette input when the user search mode is active.",
 	"citizen-command-palette-queryaction-fulltext-search-description": "Description for the fulltext search in the command palette",
 	"citizen-command-palette-queryaction-page-edit-description": "Description for the page edit action in the command palette",
+	"citizen-config-compat": "Description of the $wgCitizenCompat configuration variable, shown on configuration documentation pages.",
 	"citizen-config-headerpositionmobile": "Description for the {{Help|HeaderPositionMobile}} config option. Used in extension registration metadata.",
 	"citizen-config-preview": "Description for the {{Help|Preview}} config option. Used in extension registration metadata."
 }
