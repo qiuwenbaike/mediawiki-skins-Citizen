@@ -41,8 +41,8 @@
 			true,
 			{
 				"ignore": [
-					"custom-properties"
-					]
+					"custom-properties", "px"
+				]
 			}
 		]
 	}

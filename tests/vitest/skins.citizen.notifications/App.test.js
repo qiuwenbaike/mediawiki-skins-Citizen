@@ -28,11 +28,9 @@ mw.loader.require = vi.fn( () => ( {
 	},
 	CdxTab: {
 		name: 'CdxTab',
-		// Renders its panel slot in a [data-tab] wrapper so each tab's
-		// filtered list is queryable (the stub does not hide inactive tabs).
 		template: '<div class="cdx-tab" :data-tab="name"><slot /></div>',
 		props: [ 'name', 'label' ]
-	}
+	},
 } ) );
 
 let App;
@@ -42,10 +40,9 @@ beforeAll( async () => {
 	App = mod.default;
 } );
 
-function makeItem( id, section, read, timestamp ) {
+function makeItem( id, read, timestamp ) {
 	return {
 		id: id,
-		section: section,
 		category: 'mention',
 		categoryLabel: 'Mention',
 		read: read,
@@ -58,11 +55,11 @@ function makeItem( id, section, read, timestamp ) {
 	};
 }
 const ITEMS = [
-	makeItem( 12, 'alert', false, 1700000400 ),
-	makeItem( 21, 'message', false, 1700000300 ),
-	makeItem( 11, 'alert', true, 1700000200 )
+	makeItem( 12, false, 1700000400 ),
+	makeItem( 21, false, 1700000300 ),
+	makeItem( 11, true, 1700000200 )
 ];
-const COUNTS = { alert: 1, message: 1, total: 2 };
+const COUNTS = { total: 2, local: 2, foreign: 0 };
 
 function cloneItems() {
 	return ITEMS.map( ( item ) => Object.assign( {}, item ) );
@@ -70,7 +67,8 @@ function cloneItems() {
 
 function makeSource( overrides ) {
 	return Object.assign( {
-		fetch: vi.fn().mockResolvedValue( { items: cloneItems(), counts: Object.assign( {}, COUNTS ) } ),
+		fetch: vi.fn().mockResolvedValue( { items: cloneItems(), counts: Object.assign( {}, COUNTS ), wikis: [] } ),
+		fetchWiki: vi.fn().mockResolvedValue( { items: [] } ),
 		markSeen: vi.fn().mockResolvedValue(),
 		markRead: vi.fn().mockResolvedValue(),
 		markAllRead: vi.fn().mockResolvedValue()
@@ -86,9 +84,9 @@ function mountApp( source, extraProvide ) {
 }
 
 describe( 'notifications App', () => {
-	const inTab = ( wrapper, name ) => wrapper.findAll( `[data-tab="${ name }"] .citizen-notifications__item` );
+	const rows = ( wrapper ) => wrapper.findAll( '.citizen-notifications__item' );
 
-	it( 'fetches and marks seen on mount, swapping skeleton for the tabs', async () => {
+	it( 'fetches and marks seen on mount, swapping skeleton for the list', async () => {
 		const source = makeSource();
 		const wrapper = mountApp( source );
 
@@ -100,23 +98,21 @@ describe( 'notifications App', () => {
 		expect( source.fetch ).toHaveBeenCalledTimes( 1 );
 		expect( source.markSeen ).toHaveBeenCalledWith( 'all' );
 		expect( wrapper.find( '.citizen-notifications__skeleton' ).exists() ).toBe( false );
-		expect( wrapper.find( '.cdx-tabs' ).exists() ).toBe( true );
-		expect( inTab( wrapper, 'all' ) ).toHaveLength( 3 );
+		expect( rows( wrapper ) ).toHaveLength( 3 );
 	} );
 
-	it( 'renders each tab filtered to its section', async () => {
+	it( 'renders one list, in the order the source gave', async () => {
 		const source = makeSource();
 		const wrapper = mountApp( source );
 		await flushPromises();
 
-		expect( inTab( wrapper, 'all' ) ).toHaveLength( 3 );
-		expect( inTab( wrapper, 'alert' ) ).toHaveLength( 2 );
-		expect( inTab( wrapper, 'message' ) ).toHaveLength( 1 );
+		expect( rows( wrapper ) ).toHaveLength( 3 );
+		expect( wrapper.findAll( '.cdx-tabs' ) ).toHaveLength( 0 );
 	} );
 
-	it( 'shows an empty state when the active segment has no items', async () => {
+	it( 'shows an empty state when there is nothing waiting', async () => {
 		const source = makeSource( {
-			fetch: vi.fn().mockResolvedValue( { items: [], counts: { alert: 0, message: 0, total: 0 } } )
+			fetch: vi.fn().mockResolvedValue( { items: [], counts: { total: 0, local: 0, foreign: 0 }, wikis: [] } )
 		} );
 		const wrapper = mountApp( source );
 		await flushPromises();
@@ -141,7 +137,7 @@ describe( 'notifications App', () => {
 
 		expect( source.fetch ).toHaveBeenCalledTimes( 2 );
 		expect( wrapper.find( '.citizen-notifications__error' ).exists() ).toBe( false );
-		expect( inTab( wrapper, 'all' ) ).toHaveLength( 3 );
+		expect( rows( wrapper ) ).toHaveLength( 3 );
 	} );
 
 	it( 'marks an item read on click and clears its unread state', async () => {
@@ -149,34 +145,76 @@ describe( 'notifications App', () => {
 		const wrapper = mountApp( source );
 		await flushPromises();
 
-		// First item in the All tab is the newest unread alert (id 12).
-		await inTab( wrapper, 'all' )[ 0 ].trigger( 'click' );
+		// First row is the newest unread notification (id 12).
+		await rows( wrapper )[ 0 ].trigger( 'click' );
 
 		expect( source.markRead ).toHaveBeenCalledWith( [ 12 ] );
 		await wrapper.vm.$nextTick();
-		expect( wrapper.findAll( '[data-tab="all"] .citizen-notifications__item--unread' ).length ).toBe( 1 );
+		// The row stays put but fades, marking what has been dealt with.
+		expect( wrapper.findAll( '.citizen-notifications__item--read' ).length ).toBe( 2 );
 	} );
 
-	it( 'marks all read with a null scope on the All segment', async () => {
+	it( 'marks everything read, unscoped', async () => {
 		const source = makeSource();
 		const wrapper = mountApp( source );
 		await flushPromises();
 
-		await wrapper.find( '.citizen-notifications__mark-all' ).trigger( 'click' );
+		await wrapper.find( '.citizen-notifications__footer-clear' ).trigger( 'click' );
 
-		expect( source.markAllRead ).toHaveBeenCalledWith( null );
+		expect( source.markAllRead ).toHaveBeenCalledWith();
 	} );
 
-	it( 'scopes mark-all to a section when a section segment is active', async () => {
-		const source = makeSource();
-		const wrapper = mountApp( source );
-		await flushPromises();
+	it( 'sweeps the rows on clear-all, then empties and flips to caught-up', async () => {
+		vi.useFakeTimers();
+		try {
+			const source = makeSource();
+			const wrapper = mountApp( source );
+			await flushPromises();
 
-		wrapper.vm.activeTab = 'alert';
-		await wrapper.vm.$nextTick();
-		await wrapper.find( '.citizen-notifications__mark-all' ).trigger( 'click' );
+			await wrapper.find( '.citizen-notifications__footer-clear' ).trigger( 'click' );
 
-		expect( source.markAllRead ).toHaveBeenCalledWith( 'alert' );
+			// The sweep plays first: rows still present, marked as clearing,
+			// and the button is disabled against double fire.
+			expect( wrapper.find( '.citizen-notifications__list--clearing' ).exists() ).toBe( true );
+			expect( wrapper.findAll( '.citizen-notifications__item' ).length ).toBeGreaterThan( 0 );
+			expect( wrapper.find( '.citizen-notifications__footer-clear' ).attributes( 'disabled' ) ).toBeDefined();
+
+			vi.advanceTimersByTime( 600 );
+			await wrapper.vm.$nextTick();
+
+			// The emptied panel follows.
+			expect( wrapper.findAll( '.citizen-notifications__item' ) ).toHaveLength( 0 );
+			expect( wrapper.find( '.citizen-notifications__empty' ).exists() ).toBe( true );
+			expect( wrapper.find( '.citizen-notifications__footer-clear' ).exists() ).toBe( false );
+			expect( wrapper.find( '.citizen-notifications__footer-history--expanded' ).exists() ).toBe( true );
+		} finally {
+			vi.useRealTimers();
+		}
+	} );
+
+	it( 'lets a reopen refetch cancel an in-flight clear-all sweep', async () => {
+		vi.useFakeTimers();
+		try {
+			const source = makeSource();
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			await wrapper.find( '.citizen-notifications__footer-clear' ).trigger( 'click' );
+			// Reopen mid-sweep: refresh() resolves fresh server data before
+			// the sweep's pending swap fires.
+			wrapper.vm.refresh();
+			await flushPromises();
+
+			expect( wrapper.find( '.citizen-notifications__list--clearing' ).exists() ).toBe( false );
+			expect( wrapper.findAll( '.citizen-notifications__item' ) ).toHaveLength( 3 );
+
+			// The cancelled swap must not wipe the fresh list afterwards.
+			vi.advanceTimersByTime( 1000 );
+			await wrapper.vm.$nextTick();
+			expect( wrapper.findAll( '.citizen-notifications__item' ) ).toHaveLength( 3 );
+		} finally {
+			vi.useRealTimers();
+		}
 	} );
 
 	it( 'reports count changes to the injected callback', async () => {
@@ -185,11 +223,11 @@ describe( 'notifications App', () => {
 		const wrapper = mountApp( source, { onCountsChange: onCountsChange } );
 		await flushPromises();
 
-		expect( onCountsChange ).toHaveBeenCalledWith( { alert: 1, message: 1, total: 2 } );
+		expect( onCountsChange ).toHaveBeenCalledWith( { total: 2, local: 2, foreign: 0 } );
 
-		await wrapper.find( '.citizen-notifications__mark-all' ).trigger( 'click' );
+		await wrapper.find( '.citizen-notifications__footer-clear' ).trigger( 'click' );
 		await wrapper.vm.$nextTick();
-		expect( onCountsChange ).toHaveBeenLastCalledWith( { alert: 0, message: 0, total: 0 } );
+		expect( onCountsChange ).toHaveBeenLastCalledWith( { total: 0, local: 0, foreign: 0 } );
 	} );
 
 	it( 'refresh() refetches without showing the skeleton', async () => {
@@ -209,16 +247,75 @@ describe( 'notifications App', () => {
 		const wrapper = mountApp( source );
 		await flushPromises();
 
-		expect( wrapper.find( '.citizen-notifications__see-all' ).attributes( 'href' ) ).toContain( 'Special:Notifications' );
-		expect( wrapper.find( '.citizen-notifications__prefs' ).attributes( 'href' ) ).toContain( 'Special:Preferences' );
+		expect( wrapper.find( '.citizen-notifications__footer-history' ).attributes( 'href' ) ).toContain( 'Special:Notifications' );
+		expect( wrapper.find( '.citizen-notifications__footer-prefs' ).attributes( 'href' ) ).toContain( 'Special:Preferences' );
+	} );
+
+	describe( 'footer placement', () => {
+		const footer = ( wrapper ) => wrapper.find( '.citizen-notifications__footer' );
+
+		it( 'gives the list a footer', async () => {
+			const wrapper = mountApp( makeSource() );
+			await flushPromises();
+
+			expect( footer( wrapper ).exists() ).toBe( true );
+		} );
+
+		it( 'keeps the footer on the empty state', async () => {
+			const source = makeSource( {
+				fetch: vi.fn().mockResolvedValue( { items: [], counts: { total: 0, local: 0, foreign: 0 }, wikis: [] } )
+			} );
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			expect( wrapper.find( '.citizen-notifications__empty' ).exists() ).toBe( true );
+			expect( footer( wrapper ).exists() ).toBe( true );
+		} );
+
+		it( 'leaves the empty state nothing to clear, so the link out takes the row', async () => {
+			const source = makeSource( {
+				fetch: vi.fn().mockResolvedValue( { items: [], counts: { total: 0, local: 0, foreign: 0 }, wikis: [] } )
+			} );
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			expect( wrapper.find( '.citizen-notifications__footer-clear' ).exists() ).toBe( false );
+			expect( wrapper.find( '.citizen-notifications__footer-history' ).classes() )
+				.toContain( 'citizen-notifications__footer-history--expanded' );
+		} );
+
+		it( 'scrolls the list under the footer rather than the whole view', async () => {
+			const wrapper = mountApp( makeSource() );
+			await flushPromises();
+
+			const scroller = wrapper.find( '.citizen-notifications__scroll' );
+
+			expect( scroller.find( '.citizen-notifications__item' ).exists() ).toBe( true );
+			expect( scroller.element.nextElementSibling ).toBe( footer( wrapper ).element );
+		} );
+
+		it( 'shows no footer while loading', () => {
+			const wrapper = mountApp( makeSource() );
+
+			expect( footer( wrapper ).exists() ).toBe( false );
+		} );
+
+		it( 'shows no footer on the error state', async () => {
+			const source = makeSource( { fetch: vi.fn().mockRejectedValue( new Error( 'network' ) ) } );
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			expect( wrapper.find( '.citizen-notifications__error' ).exists() ).toBe( true );
+			expect( footer( wrapper ).exists() ).toBe( false );
+		} );
 	} );
 
 	it( 'gives each item a stretched primary link labelled by its plain-text header', async () => {
-		const item = makeItem( 5, 'alert', false, 1700000500 );
+		const item = makeItem( 5, false, 1700000500 );
 		item.primaryUrl = '/wiki/Target?markasread=5';
 		item.header = '<strong>NotifBot</strong> mentioned you';
 		const source = makeSource( {
-			fetch: vi.fn().mockResolvedValue( { items: [ item ], counts: { alert: 1, message: 0, total: 1 } } )
+			fetch: vi.fn().mockResolvedValue( { items: [ item ], counts: { total: 1, local: 1, foreign: 0 }, wikis: [] } )
 		} );
 		const wrapper = mountApp( source );
 		await flushPromises();
@@ -228,5 +325,174 @@ describe( 'notifications App', () => {
 		expect( link.attributes( 'href' ) ).toBe( '/wiki/Target?markasread=5' );
 		// Accessible name is the header with markup stripped.
 		expect( link.attributes( 'aria-label' ) ).toBe( 'NotifBot mentioned you' );
+	} );
+
+	describe( 'other wikis', () => {
+		const WIKIS = [
+			{ id: 'commons', name: 'Wikimedia Commons', url: 'https://commons.example/wiki/Special:Notifications', apiUrl: 'https://commons.example/w/api.php', timestamp: 1700000500 },
+			{ id: 'meta', name: 'Meta', url: 'https://meta.example/wiki/Special:Notifications', apiUrl: 'https://meta.example/w/api.php', timestamp: 1700000100 }
+		];
+
+		function sourceWithWikis( wikis = WIKIS ) {
+			return makeSource( {
+				fetch: vi.fn().mockResolvedValue( {
+					items: cloneItems(),
+					counts: { total: 7, local: 2, foreign: 5 },
+					wikis: wikis
+				} )
+			} );
+		}
+
+		it( 'hides the source switch when there are no other wikis', async () => {
+			const wrapper = mountApp( makeSource() );
+			await flushPromises();
+
+			expect( wrapper.find( '.cdx-tabs' ).exists() ).toBe( false );
+		} );
+
+		it( 'shows the source switch once another wiki has something waiting', async () => {
+			const wrapper = mountApp( sourceWithWikis() );
+			await flushPromises();
+
+			expect( wrapper.find( '.cdx-tabs' ).exists() ).toBe( true );
+		} );
+
+		it( 'keeps this wiki\'s notifications and the wikis in separate tabs', async () => {
+			const wrapper = mountApp( sourceWithWikis() );
+			await flushPromises();
+
+			expect( wrapper.findAll( '[data-tab="local"] .citizen-notifications__item' ) )
+				.toHaveLength( 3 );
+			expect( wrapper.findAll( '[data-tab="foreign"] .citizen-notifications__wiki' ) )
+				.toHaveLength( 2 );
+		} );
+
+		it( 'gives only this wiki\'s tab a footer', async () => {
+			const wrapper = mountApp( sourceWithWikis() );
+			await flushPromises();
+
+			expect( wrapper.findAll( '[data-tab="local"] .citizen-notifications__footer' ) )
+				.toHaveLength( 1 );
+			expect( wrapper.findAll( '[data-tab="foreign"] .citizen-notifications__footer' ) )
+				.toHaveLength( 0 );
+		} );
+
+		it( 'marks every listed wiki as having something waiting', async () => {
+			const wrapper = mountApp( sourceWithWikis() );
+			await flushPromises();
+
+			// Echo only reports wikis that have unread, so every row is marked.
+			expect( wrapper.findAll( '.citizen-notifications__wiki-dot' ) ).toHaveLength( 2 );
+		} );
+
+		it( 'names each wiki, most recently active first', async () => {
+			const wrapper = mountApp( sourceWithWikis() );
+			await flushPromises();
+			expect( wrapper.findAll( '.citizen-notifications__wiki-name' ).map( ( w ) => w.text() ) )
+				.toEqual( [ 'Wikimedia Commons', 'Meta' ] );
+		} );
+
+		it( 'fetches a wiki only when it is opened, and only once', async () => {
+			const source = sourceWithWikis();
+			source.fetchWiki = vi.fn().mockResolvedValue( {
+				items: [ makeItem( 99, false, 1700000900 ) ]
+			} );
+			const wrapper = mountApp( source );
+			await flushPromises();
+			expect( source.fetchWiki ).not.toHaveBeenCalled();
+
+			await wrapper.findAll( '.citizen-notifications__wiki' )[ 0 ].trigger( 'click' );
+			await flushPromises();
+
+			expect( source.fetchWiki ).toHaveBeenCalledTimes( 1 );
+			expect( source.fetchWiki.mock.calls[ 0 ][ 0 ].id ).toBe( 'commons' );
+			expect( wrapper.findAll( '[data-tab="foreign"] .citizen-notifications__item' ) )
+				.toHaveLength( 1 );
+
+			// Collapse and reopen: still one request.
+			await wrapper.findAll( '.citizen-notifications__wiki' )[ 0 ].trigger( 'click' );
+			await wrapper.findAll( '.citizen-notifications__wiki' )[ 0 ].trigger( 'click' );
+			await flushPromises();
+
+			expect( source.fetchWiki ).toHaveBeenCalledTimes( 1 );
+		} );
+
+		it( 'offers the wiki itself when its notifications cannot be fetched', async () => {
+			const source = sourceWithWikis();
+			source.fetchWiki = vi.fn().mockRejectedValue( new Error( 'no shared login' ) );
+			const wrapper = mountApp( source );
+			await flushPromises();
+			await wrapper.findAll( '.citizen-notifications__wiki' )[ 0 ].trigger( 'click' );
+			await flushPromises();
+
+			const link = wrapper.find( '.citizen-notifications__wiki-open' );
+			expect( link.exists() ).toBe( true );
+			expect( link.attributes( 'href' ) ).toBe( 'https://commons.example/wiki/Special:Notifications' );
+		} );
+
+		it( 'offers the wiki itself when it has nothing to show', async () => {
+			const source = sourceWithWikis();
+			source.fetchWiki = vi.fn().mockResolvedValue( { items: [] } );
+			const wrapper = mountApp( source );
+			await flushPromises();
+			await wrapper.findAll( '.citizen-notifications__wiki' )[ 0 ].trigger( 'click' );
+			await flushPromises();
+
+			expect( wrapper.find( '.citizen-notifications__wiki-open' ).exists() ).toBe( true );
+		} );
+
+		it( 'marks the open wiki as expanded for assistive tech', async () => {
+			const wrapper = mountApp( sourceWithWikis() );
+			await flushPromises();
+			const first = wrapper.findAll( '.citizen-notifications__wiki' )[ 0 ];
+			expect( first.attributes( 'aria-expanded' ) ).toBe( 'false' );
+
+			await first.trigger( 'click' );
+			await flushPromises();
+
+			expect( wrapper.findAll( '.citizen-notifications__wiki' )[ 0 ].attributes( 'aria-expanded' ) )
+				.toBe( 'true' );
+		} );
+
+		it( 'falls back to this wiki when the other wikis go away', async () => {
+			const source = sourceWithWikis();
+			const wrapper = mountApp( source );
+			await flushPromises();
+			expect( wrapper.find( '.citizen-notifications__wikis' ).exists() ).toBe( true );
+
+			source.fetch.mockResolvedValue( {
+				items: cloneItems(), counts: { total: 2, local: 2, foreign: 0 }, wikis: []
+			} );
+			wrapper.vm.refresh();
+			await flushPromises();
+
+			expect( wrapper.find( '.cdx-tabs' ).exists() ).toBe( false );
+			expect( wrapper.findAll( '.citizen-notifications__item' ) ).toHaveLength( 3 );
+		} );
+
+		it( 'keeps the elsewhere count in the badge after a local mark-read', async () => {
+			const onCountsChange = vi.fn();
+			const source = sourceWithWikis();
+			const wrapper = mountApp( source, { onCountsChange } );
+			await flushPromises();
+			onCountsChange.mockClear();
+
+			await rows( wrapper )[ 0 ].trigger( 'click' );
+
+			// One local notification cleared; the five elsewhere are untouched.
+			expect( onCountsChange ).toHaveBeenLastCalledWith( { total: 6, local: 1, foreign: 5 } );
+		} );
+
+		it( 'keeps the elsewhere count after mark-all clears the local rows', async () => {
+			const onCountsChange = vi.fn();
+			const source = sourceWithWikis();
+			const wrapper = mountApp( source, { onCountsChange } );
+			await flushPromises();
+			onCountsChange.mockClear();
+
+			await wrapper.find( '.citizen-notifications__footer-clear' ).trigger( 'click' );
+
+			expect( onCountsChange ).toHaveBeenLastCalledWith( { total: 5, local: 0, foreign: 5 } );
+		} );
 	} );
 } );

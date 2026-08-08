@@ -7,9 +7,14 @@
 // fallback and the no-JS state. The skeleton and error classes are shared with
 // the Vue loading/error states, so they live here rather than being duplicated.
 
-// Widen the shared dropdown card for notification content.
+// Widen the shared dropdown card for notification content. Below the tablet
+// breakpoint the shared header-card mixin stretches end-anchored cards edge to
+// edge with `left: 0; right: 0`, and an explicit width would defeat that
+// over-constrained stretch — so only pin the width once the card floats free.
 #citizen-notifications-dropdown__card {
-	width: 24rem;
+	@media ( min-width: @min-width-breakpoint-tablet ) {
+		width: 24rem;
+	}
 }
 
 .citizen-notifications {
@@ -26,7 +31,29 @@
 		flex-direction: column;
 		gap: var( --space-xs );
 		padding: var( --space-sm ) var( --space-md );
-		border-bottom: var( --border-subtle );
+	}
+
+	// Matches the rows the skeleton stands in for: dividers between items,
+	// never a trailing line under the last one.
+	&__skeleton-item + &__skeleton-item {
+		border-top: var( --border-subtle );
+	}
+
+	// Icon-generation skeleton opts in via the modifier so cached pre-icon
+	// HTML keeps the plain two-line layout.
+	&__skeleton-item--icon {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		column-gap: var( --space-sm );
+	}
+
+	&__skeleton-icon {
+		grid-row: span 2;
+		width: 2rem;
+		height: 2rem;
+		margin-block-start: 0.125rem;
+		background-color: var( --color-surface-3 );
+		border-radius: var( --border-radius-circle );
 	}
 
 	&__skeleton-line {

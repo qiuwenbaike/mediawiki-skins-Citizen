@@ -13,7 +13,7 @@ const { createEchoSource } = require( './sources/echo.js' );
  *
  * @param {HTMLElement} mountEl
  * @param {Object} [options]
- * @param {Function} [options.onCountsChange] Called with `{ alert, message, total }`
+ * @param {Function} [options.onCountsChange] Called with `{ total, local, foreign }`
  *   whenever unread counts change, so the trigger can update the bell badge.
  * @return {Object} mounted instance exposing `refresh()`
  */
@@ -21,7 +21,7 @@ function initApp( mountEl, options ) {
 	const opts = options || {};
 
 	const app = Vue.createMwApp( App );
-	app.provide( 'source', createEchoSource( mw.Api ) );
+	app.provide( 'source', createEchoSource( mw.Api, mw.ForeignApi ) );
 	if ( typeof opts.onCountsChange === 'function' ) {
 		app.provide( 'onCountsChange', opts.onCountsChange );
 	}

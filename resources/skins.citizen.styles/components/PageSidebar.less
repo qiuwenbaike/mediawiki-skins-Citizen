@@ -6,8 +6,11 @@
 		flex-direction: column;
 		grid-area: sidebar;
 		gap: var( --space-sm );
-		// margin-top: ~'calc( var( --height-sticky-header ) + var( --space-sm ) )'; // align with first paragraph
-		// contain: strict;
+		// margin-top: var( --space-sm ); // align with first paragraph
+		// Not `strict`: pairing `layout` with `size` makes this a reflow root
+		// in Firefox, which strands the sticky ToC at its static position
+		// mid-scroll (#1175). Do not add `layout` back.
+		// contain: size paint style;
 	}
 
 	.citizen-menu__heading,

@@ -91,6 +91,7 @@
 						"citizen-preferences-load-retry",
 						"citizen-preferences-toggle",
 						"citizen-search-toggle",
+						"citizen-search-toggle-shortcut",
 						"citizen-usermenu-toggle",
 						"randompage",
 						"search",
@@ -199,6 +200,7 @@
 				"resources/skins.citizen.scripts/dropdown.js",
 				"resources/skins.citizen.scripts/notifications.js",
 				"resources/skins.citizen.scripts/intentPrefetch.js",
+				"resources/skins.citizen.scripts/keyboardLayout.js",
 				"resources/skins.citizen.scripts/lastModified.js",
 				"resources/skins.citizen.scripts/overflowElements/index.js",
 				"resources/skins.citizen.scripts/overflowElements/wrapper.js",
@@ -408,12 +410,15 @@
 				{
 					"name": "resources/skins.citizen.commandPalette/config.json",
 					"callback": "MediaWiki\\Skins\\Citizen\\Hooks\\ResourceLoaderHooks::getCitizenCommandPaletteResourceLoaderConfig"
-				}
+				},
+				"resources/skins.citizen.scripts/keyboardLayout.js"
 			],
 			"messages": [
 				"action-edit",
 				"citizen-command-palette-action-view",
 				"citizen-command-palette-back",
+				"citizen-command-palette-label",
+				"citizen-command-palette-results",
 				"citizen-command-palette-command-action-description",
 				"citizen-command-palette-command-action-label",
 				"citizen-command-palette-command-category-description",
@@ -564,6 +569,7 @@
 			"class": "MediaWiki\\ResourceLoader\\CodexModule",
 			"dependencies": [
 				"mediawiki.api",
+				"mediawiki.ForeignApi",
 				"mediawiki.util",
 				"skins.citizen.notifications.codex",
 				"vue"
@@ -575,20 +581,30 @@
 					"callback": "MediaWiki\\ResourceLoader\\CodexModule::getIcons",
 					"callbackParam": [
 						"cdxIconCheckAll",
+						"cdxIconExpand",
+						"cdxIconHistory",
+						"cdxIconLinkExternal",
+						"cdxIconNext",
 						"cdxIconSettings"
 					]
 				},
 				"resources/skins.citizen.notifications/sources/echo.js",
+				"resources/skins.citizen.notifications/relativeTime.js",
 				"resources/skins.citizen.notifications/components/App.vue",
 				"resources/skins.citizen.notifications/components/NotificationList.vue",
-				"resources/skins.citizen.notifications/components/NotificationItem.vue"
+				"resources/skins.citizen.notifications/components/NotificationItem.vue",
+				"resources/skins.citizen.notifications/components/WikiList.vue",
+				"resources/skins.citizen.notifications/components/PanelFooter.vue"
 			],
 			"messages": [
 				"citizen-notifications-title",
-				"citizen-notifications-tab-all",
-				"citizen-notifications-tab-alert",
-				"citizen-notifications-tab-notice",
 				"citizen-notifications-mark-all-read",
+				"citizen-notifications-clear-all",
+				"citizen-notifications-source-local",
+				"citizen-notifications-source-other",
+				"citizen-notifications-loading",
+				"citizen-notifications-wiki-open",
+				"citizen-notifications-wiki-unavailable",
 				"citizen-notifications-empty",
 				"citizen-notifications-error",
 				"citizen-notifications-retry",
@@ -936,7 +952,7 @@
 	"config": {
 		"ThemeDefault": {
 			"value": "auto",
-			"description": "Default theme of the skin. Accepts 'auto', 'light', 'dark', or any theme value such as 'black' or a wiki-defined theme.",
+			"description": "Deprecated: set the skin-theme `default` in MediaWiki:Citizen-preferences.json instead; the JSON value wins when both are set. Default theme of the skin. Accepts 'auto', 'light', 'dark', or any theme value such as 'black' or a wiki-defined theme.",
 			"descriptionmsg": "citizen-config-themedefault",
 			"public": true
 		},
