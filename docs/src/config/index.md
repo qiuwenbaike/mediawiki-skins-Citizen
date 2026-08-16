@@ -239,7 +239,7 @@ $wgCitizenEnableManifest = true;
 
 ### `$wgCitizenManifestOptions`
 
-Customizes the web app manifest settings, such as the app name, colors, and icons.
+Customizes the web app manifest, such as the app description, colors, icons, shortcuts, and screenshots.
 
 ::: details View default configuration
 
@@ -248,9 +248,11 @@ $wgCitizenManifestOptions = [
     'background_color' => '#0d0e12',
     'description' => '',
     'short_name' => '',
-    'theme_color' => "#0d0e12",
+    'theme_color' => '#0d0e12',
     'icons' => [],
 ];
 ```
 
 :::
+
+See the [Progressive web app page](/features/progressive-web-app) for what each option accepts, and for what browsers need before they will offer to install your wiki.

@@ -1,6 +1,6 @@
 import type MarkdownIt from "markdown-it";
-import { GITHUB_OWNER, GITHUB_REPO } from "../../constants";
-import { linkContributors } from "./contributors";
+import { GITHUB_OWNER, GITHUB_REPO } from "../../constants.ts";
+import { linkContributors } from "./contributors.ts";
 
 function removeVersionHeader(input: string): string {
 	return input.replace(/^\s*##\s+\[.*?\]\(.*?\)(?:\s+\(.*\))?\s*(\r?\n)+/, "");
@@ -24,8 +24,8 @@ function formatCVELinks(input: string): string {
 }
 
 function formatPRLinks(input: string): string {
-	const repoUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
-	const prRegex = new RegExp(`(?<!\\]\\()${repoUrl}/(pull|issues)/(\\d+)`, "g");
+	const repoUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`,
+		prRegex = new RegExp(`(?<!\\]\\()${repoUrl}/(pull|issues)/(\\d+)`, "g");
 	return input.replaceAll(prRegex, "[#$2]($&)");
 }
 

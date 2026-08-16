@@ -18,12 +18,11 @@ import { ref } from "vue";
 import { withBase } from "vitepress";
 
 const { code } = defineProps<{
-	code: string;
-}>();
-
-const copied = ref(false);
-const copyIcon = withBase("/img/copy.svg");
-const checkIcon = withBase("/img/check.svg");
+		code: string;
+	}>(),
+	copied = ref(false),
+	copyIcon = withBase("/img/copy.svg"),
+	checkIcon = withBase("/img/check.svg");
 
 async function copy() {
 	const clipboard = navigator.clipboard;
@@ -82,8 +81,8 @@ async function copy() {
 
 .copy-btn:hover {
 	color: var(--vp-c-text-1);
-	background-color: var(--vp-c-bg-mute);
-	border-color: var(--vp-c-brand);
+	background-color: var(--vp-c-default-soft);
+	border-color: var(--vp-c-brand-1);
 }
 
 .icon-copy,

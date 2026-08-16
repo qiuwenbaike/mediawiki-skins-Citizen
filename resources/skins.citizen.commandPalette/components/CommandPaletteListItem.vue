@@ -20,8 +20,6 @@ Partially based on the MenuItem component from Codex.
 			:thumbnail="thumbnail"
 			:thumbnail-icon="thumbnailIcon"
 			:metadata="metadata"
-			:type="type"
-			:type-label="typeLabel"
 			:search-query="searchQuery"
 			:url="url"
 			:highlight-query="highlightQuery"
@@ -44,7 +42,6 @@ const { defineComponent, computed, ref } = require( 'vue' );
 // Import the new sub-components
 const CommandPaletteListItemContent = require( './CommandPaletteListItemContent.vue' );
 const CommandPaletteListItemActions = require( './CommandPaletteListItemActions.vue' );
-const { CommandPaletteItem } = require( '../types.js' );
 
 // @vue/component
 module.exports = exports = defineComponent( {
@@ -157,7 +154,7 @@ module.exports = exports = defineComponent( {
 				event.shiftKey
 			) );
 			emit( 'select',
-				/** @type {CommandPaletteItem} */ ( {
+				/** @type {import('../types.js').CommandPaletteItem} */ ( {
 					id: props.id,
 					label: props.label,
 					url: props.url,
@@ -188,11 +185,6 @@ module.exports = exports = defineComponent( {
 			'citizen-command-palette-list-item--highlighted': props.highlighted
 		} ) );
 
-		// Messages that can be used here:
-		// * citizen-command-palette-type-page
-		// eslint-disable-next-line mediawiki/msg-doc
-		const typeLabel = computed( () => mw.message( `citizen-command-palette-type-${ props.type }` ).text() );
-
 		// --- Expose Methods ---
 		expose( {
 			focusFirstButton: () => actionsRef.value?.focusFirstButton(),
@@ -209,8 +201,7 @@ module.exports = exports = defineComponent( {
 			onClick,
 			onAction,
 			// Computed
-			rootClasses,
-			typeLabel
+			rootClasses
 		};
 	}
 } );

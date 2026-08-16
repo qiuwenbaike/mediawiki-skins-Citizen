@@ -65,11 +65,23 @@ function cloneItems() {
 	return ITEMS.map( ( item ) => Object.assign( {}, item ) );
 }
 
+// The seen marker sits behind the newest notification, so the panel has
+// something to mark; the tests that care override these.
+const SEEN_TIME = 1700000000;
+const NEWEST_WAITING = 1700000400;
+
 function makeSource( overrides ) {
 	return Object.assign( {
-		fetch: vi.fn().mockResolvedValue( { items: cloneItems(), counts: Object.assign( {}, COUNTS ), wikis: [] } ),
+		fetch: vi.fn().mockResolvedValue( {
+			items: cloneItems(),
+			counts: Object.assign( {}, COUNTS ),
+			wikis: [],
+			seenTime: SEEN_TIME,
+			newestWaiting: NEWEST_WAITING
+		} ),
 		fetchWiki: vi.fn().mockResolvedValue( { items: [] } ),
-		markSeen: vi.fn().mockResolvedValue(),
+		// Echo answers with the marker it recorded.
+		markSeen: vi.fn().mockResolvedValue( NEWEST_WAITING + 10 ),
 		markRead: vi.fn().mockResolvedValue(),
 		markAllRead: vi.fn().mockResolvedValue()
 	}, overrides );
@@ -86,19 +98,220 @@ function mountApp( source, extraProvide ) {
 describe( 'notifications App', () => {
 	const rows = ( wrapper ) => wrapper.findAll( '.citizen-notifications__item' );
 
-	it( 'fetches and marks seen on mount, swapping skeleton for the list', async () => {
+	it( 'fetches on mount, swapping the skeleton for the list', async () => {
 		const source = makeSource();
 		const wrapper = mountApp( source );
 
 		// onMounted -> load() sets status loading synchronously.
-		expect( wrapper.find( '.citizen-notifications__skeleton' ).exists() ).toBe( true );
+		expect( wrapper.find( '.citizen-notifications__placeholder-body' ).exists() ).toBe( true );
 
 		await flushPromises();
 
 		expect( source.fetch ).toHaveBeenCalledTimes( 1 );
-		expect( source.markSeen ).toHaveBeenCalledWith( 'all' );
-		expect( wrapper.find( '.citizen-notifications__skeleton' ).exists() ).toBe( false );
+		expect( wrapper.find( '.citizen-notifications__placeholder-body' ).exists() ).toBe( false );
 		expect( rows( wrapper ) ).toHaveLength( 3 );
+	} );
+
+	it( 'leaves marking seen to the trigger, which knows when the panel is shown', async () => {
+		const source = makeSource();
+		const wrapper = mountApp( source );
+		await flushPromises();
+
+		// The panel now mounts on hover, so a fetch must not clear the streams.
+		expect( source.markSeen ).not.toHaveBeenCalled();
+
+		wrapper.vm.markSeen();
+
+		expect( source.markSeen ).toHaveBeenCalledWith( 'all' );
+	} );
+
+	describe( 'marking seen', () => {
+		it( 'marks seen on a cold open, before its own first fetch has landed', () => {
+			// The trigger marks seen straight after mounting, so this runs with
+			// no fetch result yet. Treating that as "nothing waiting" would
+			// drop the marker for the whole visit.
+			const source = makeSource();
+			const wrapper = mountApp( source );
+
+			wrapper.vm.markSeen();
+
+			expect( source.markSeen ).toHaveBeenCalledWith( 'all' );
+		} );
+
+		it( 'trusts a server-confirmed zero without waiting for the fetch', () => {
+			// The one thing we can answer before fetching: the server rendered
+			// a count of zero, so there is nothing for a marker to cover.
+			const source = makeSource();
+			const wrapper = mountApp( source, { initialCount: 0 } );
+
+			wrapper.vm.markSeen();
+
+			expect( source.markSeen ).not.toHaveBeenCalled();
+		} );
+
+		it( 'skips the request when the marker sits exactly on the newest item', async () => {
+			const source = makeSource( {
+				fetch: vi.fn().mockResolvedValue( {
+					items: cloneItems(), counts: Object.assign( {}, COUNTS ), wikis: [],
+					seenTime: NEWEST_WAITING, newestWaiting: NEWEST_WAITING
+				} )
+			} );
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			wrapper.vm.markSeen();
+
+			expect( source.markSeen ).not.toHaveBeenCalled();
+		} );
+
+		it( 'keeps its own marker when a refresh answers with an older one', async () => {
+			const source = makeSource();
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			wrapper.vm.markSeen();
+			await flushPromises();
+			expect( source.markSeen ).toHaveBeenCalledTimes( 1 );
+
+			// A refresh already in flight when the marker was set comes back
+			// carrying the older value; adopting it would cost a second mark.
+			wrapper.vm.refresh();
+			await flushPromises();
+			wrapper.vm.markSeen();
+
+			expect( source.markSeen ).toHaveBeenCalledTimes( 1 );
+		} );
+
+		it( 'asks once while a mark is still in flight', async () => {
+			// Echo marks up to its own clock, so the call already on its way
+			// covers anything a second would.
+			let settle;
+			const source = makeSource( {
+				markSeen: vi.fn( () => new Promise( ( resolve ) => {
+					settle = resolve;
+				} ) )
+			} );
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			wrapper.vm.markSeen();
+			wrapper.vm.markSeen();
+			wrapper.vm.markSeen();
+
+			expect( source.markSeen ).toHaveBeenCalledTimes( 1 );
+
+			// Once it lands the guard lifts again, though the marker it carried
+			// forward now covers everything waiting.
+			settle( NEWEST_WAITING + 10 );
+			await flushPromises();
+			expect( source.markSeen ).toHaveBeenCalledTimes( 1 );
+		} );
+
+		it( 'keeps its previous marker when Echo answers without one', async () => {
+			const source = makeSource( { markSeen: vi.fn().mockResolvedValue( 0 ) } );
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			wrapper.vm.markSeen();
+			await flushPromises();
+
+			// Nothing to carry forward, so the next open asks again rather than
+			// recording a marker of zero and skipping forever.
+			wrapper.vm.markSeen();
+
+			expect( source.markSeen ).toHaveBeenCalledTimes( 2 );
+		} );
+
+		it( 'skips the request when the marker already covers everything waiting', async () => {
+			const source = makeSource( {
+				fetch: vi.fn().mockResolvedValue( {
+					items: cloneItems(),
+					counts: Object.assign( {}, COUNTS ),
+					wikis: [],
+					// Already past the newest notification.
+					seenTime: NEWEST_WAITING + 1,
+					newestWaiting: NEWEST_WAITING
+				} )
+			} );
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			wrapper.vm.markSeen();
+
+			expect( source.markSeen ).not.toHaveBeenCalled();
+		} );
+
+		it( 'skips the request when nothing is waiting at all', async () => {
+			const source = makeSource( {
+				fetch: vi.fn().mockResolvedValue( {
+					items: [], counts: { total: 0, local: 0, foreign: 0 }, wikis: [],
+					seenTime: 0, newestWaiting: 0
+				} )
+			} );
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			wrapper.vm.markSeen();
+
+			expect( source.markSeen ).not.toHaveBeenCalled();
+		} );
+
+		it( 'marks once, then stops asking until something newer arrives', async () => {
+			const source = makeSource();
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			// First open: the marker is behind, so Echo is told.
+			wrapper.vm.markSeen();
+			await flushPromises();
+			expect( source.markSeen ).toHaveBeenCalledTimes( 1 );
+
+			// Reopening with nothing new must not ask again — this is the
+			// second request per open that the guard exists to remove.
+			wrapper.vm.markSeen();
+			wrapper.vm.markSeen();
+
+			expect( source.markSeen ).toHaveBeenCalledTimes( 1 );
+		} );
+
+		it( 'marks again once a newer notification lands', async () => {
+			const source = makeSource();
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			wrapper.vm.markSeen();
+			await flushPromises();
+			expect( source.markSeen ).toHaveBeenCalledTimes( 1 );
+
+			// A refresh brings something newer than the marker Echo returned.
+			source.fetch.mockResolvedValueOnce( {
+				items: cloneItems(),
+				counts: Object.assign( {}, COUNTS ),
+				wikis: [],
+				seenTime: NEWEST_WAITING + 10,
+				newestWaiting: NEWEST_WAITING + 500
+			} );
+			wrapper.vm.refresh();
+			await flushPromises();
+
+			wrapper.vm.markSeen();
+
+			expect( source.markSeen ).toHaveBeenCalledTimes( 2 );
+		} );
+
+		it( 'keeps asking when the request fails, rather than assuming it landed', async () => {
+			const source = makeSource( {
+				markSeen: vi.fn().mockRejectedValue( new Error( 'network' ) )
+			} );
+			const wrapper = mountApp( source );
+			await flushPromises();
+
+			wrapper.vm.markSeen();
+			await flushPromises();
+			wrapper.vm.markSeen();
+
+			expect( source.markSeen ).toHaveBeenCalledTimes( 2 );
+		} );
 	} );
 
 	it( 'renders one list, in the order the source gave', async () => {
@@ -237,9 +450,98 @@ describe( 'notifications App', () => {
 		expect( source.fetch ).toHaveBeenCalledTimes( 1 );
 
 		wrapper.vm.refresh();
-		expect( wrapper.find( '.citizen-notifications__skeleton' ).exists() ).toBe( false );
+		expect( wrapper.find( '.citizen-notifications__placeholder-body' ).exists() ).toBe( false );
 		await flushPromises();
 		expect( source.fetch ).toHaveBeenCalledTimes( 2 );
+	} );
+
+	it( 'rides an in-flight fetch instead of stacking a second one', async () => {
+		// A hover mounts the panel and a click follows before the first fetch
+		// has landed: the open must not cost a second request.
+		const source = makeSource();
+		const wrapper = mountApp( source );
+
+		wrapper.vm.refresh();
+
+		expect( source.fetch ).toHaveBeenCalledTimes( 1 );
+
+		await flushPromises();
+
+		expect( rows( wrapper ) ).toHaveLength( 3 );
+	} );
+
+	it( 'keeps a populated panel when a refresh fails', async () => {
+		const source = makeSource();
+		const wrapper = mountApp( source );
+		await flushPromises();
+
+		source.fetch.mockRejectedValueOnce( new Error( 'network' ) );
+		wrapper.vm.refresh();
+		await flushPromises();
+
+		expect( wrapper.find( '.citizen-notifications__error' ).exists() ).toBe( false );
+		expect( rows( wrapper ) ).toHaveLength( 3 );
+	} );
+
+	describe( 'server-rendered count', () => {
+		const mountWithCount = ( source, initialCount ) => mountApp( source, { initialCount } );
+
+		it( 'opens straight into the empty state when the server says nothing is waiting', async () => {
+			const source = makeSource( {
+				fetch: vi.fn().mockResolvedValue( {
+					items: [], counts: { total: 0, local: 0, foreign: 0 }, wikis: []
+				} )
+			} );
+			const wrapper = mountWithCount( source, 0 );
+
+			// No shimmer at any point: the empty state is the answer, not a
+			// step on the way to it.
+			expect( wrapper.find( '.citizen-notifications__placeholder-body' ).exists() ).toBe( false );
+			expect( wrapper.find( '.citizen-notifications__empty' ).exists() ).toBe( true );
+
+			await flushPromises();
+
+			expect( source.fetch ).toHaveBeenCalledTimes( 1 );
+			expect( wrapper.find( '.citizen-notifications__empty' ).exists() ).toBe( true );
+		} );
+
+		it( 'fills in a notification that arrived after the page was rendered', async () => {
+			const source = makeSource();
+			const wrapper = mountWithCount( source, 0 );
+			await flushPromises();
+
+			expect( rows( wrapper ) ).toHaveLength( 3 );
+		} );
+
+		it( 'keeps the server-confirmed empty state when the confirming fetch fails', async () => {
+			const source = makeSource( {
+				fetch: vi.fn().mockRejectedValue( new Error( 'network' ) )
+			} );
+			const wrapper = mountWithCount( source, 0 );
+			await flushPromises();
+
+			// The server counted zero; that is a fact worth more than an error.
+			expect( wrapper.find( '.citizen-notifications__error' ).exists() ).toBe( false );
+			expect( wrapper.find( '.citizen-notifications__empty' ).exists() ).toBe( true );
+		} );
+
+		it( 'previews only as many skeleton rows as there are notifications', () => {
+			const wrapper = mountWithCount( makeSource(), 2 );
+
+			expect( wrapper.findAll( '.citizen-notifications__placeholder-item' ) ).toHaveLength( 2 );
+		} );
+
+		it( 'caps the preview at a panelful for a large count', () => {
+			const wrapper = mountWithCount( makeSource(), 40 );
+
+			expect( wrapper.findAll( '.citizen-notifications__placeholder-item' ) ).toHaveLength( 5 );
+		} );
+
+		it( 'falls back to a full preview when the count is unknown', () => {
+			const wrapper = mountWithCount( makeSource(), null );
+
+			expect( wrapper.findAll( '.citizen-notifications__placeholder-item' ) ).toHaveLength( 5 );
+		} );
 	} );
 
 	it( 'renders footer links to the notifications and preferences pages', async () => {
@@ -294,10 +596,12 @@ describe( 'notifications App', () => {
 			expect( scroller.element.nextElementSibling ).toBe( footer( wrapper ).element );
 		} );
 
-		it( 'shows no footer while loading', () => {
+		it( 'shows the footer while loading, so it does not pop in when the fetch lands', () => {
 			const wrapper = mountApp( makeSource() );
 
-			expect( footer( wrapper ).exists() ).toBe( false );
+			expect( footer( wrapper ).exists() ).toBe( true );
+			// Nothing to clear yet, so only the history and preferences links.
+			expect( wrapper.find( '.citizen-notifications__footer-clear' ).exists() ).toBe( false );
 		} );
 
 		it( 'shows no footer on the error state', async () => {
