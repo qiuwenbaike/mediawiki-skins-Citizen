@@ -37,13 +37,7 @@
 				}
 			}
 		],
-		"length-zero-no-unit": [
-			true,
-			{
-				"ignore": [
-					"custom-properties", "px"
-				]
-			}
-		]
+		"length-zero-no-unit": null
+
 	}
 }

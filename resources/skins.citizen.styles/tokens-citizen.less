@@ -49,7 +49,7 @@
 	// Measured sticky header bar height, written by stickyHeader.js. Not
 	// zeroed while the bar is hidden — visibility is gated per consumer by
 	// .mixin-citizen-header-offset-block-start.
-	// stylelint-disable-next-line length-zero-no-unit -- Need the unit for calc() (#1058)
+	// length-zero-no-unit -- Need the unit for calc() (#1058)
 	--height-sticky-header: 0px;
 	// Width or height of citizen-header, depending on the orientation
 	--header-size: @header-size;
@@ -58,6 +58,7 @@
 	// overflows the visible area while the bar is showing. dvh tracks the
 	// currently-visible height.
 	--header-card-maxheight: calc( 100vh - var( --space-sm ) * 2 ); // Kept for compatibility issues, but will be removed in the future.
+	// stylelint-disable-next-line declaration-block-no-duplicate-custom-properties
 	--header-card-maxheight: calc( 100dvh - var( --header-size ) - var( --space-xs ) * 2 );
 	// Width of the gradient in citizen-overflow
 	--overflow-gradient-size: 2rem;
@@ -170,7 +171,7 @@
 	// Header position tokens
 	// These drive dynamic layout calc()s; a unitless 0 is type <number>
 	// and silently invalidates <number> + <length> calcs (#1058).
-	/* stylelint-disable length-zero-no-unit -- Need the unit for calc() (#1058) */
+	/* length-zero-no-unit -- Need the unit for calc() (#1058) */
 	--header-direction: row;
 	--header-size-inline-start: 0rem;
 	--header-size-inline-end: 0rem;
@@ -221,7 +222,7 @@
 			.mixin-citizen-card-expand( down );
 		}
 	}
-	/* stylelint-enable length-zero-no-unit */
+	/* length-zero-no-unit */
 
 	// Derived header offset tokens. Deliberately static at the root — the
 	// dynamic states live in .mixin-citizen-header-offset-block-start.
