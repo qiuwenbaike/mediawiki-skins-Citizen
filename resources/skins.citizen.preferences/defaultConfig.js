@@ -4,15 +4,16 @@ const { PreferencesConfig } = require( './types.js' );
  * Built-in default preferences configuration.
  * Uses the same schema as admin overrides from MediaWiki:Citizen-preferences.json.
  *
+ * @param {boolean} [isV4] Whether the v4 preview generation is active. Defaults
+ *   to the root class; the docs reference generator passes it explicitly so it
+ *   can render both channels from Node, where there is no DOM.
  * @return {PreferencesConfig} Default config with sections and preferences
  */
-function getDefaultConfig() {
+function getDefaultConfig( isV4 = document.documentElement.classList.contains( 'citizen-v4' ) ) {
 	// Black ships as a theme on the preview channel; the legacy world
 	// keeps the pure-black switch instead.
-	// citizen-v4-remove — at the 4.0 flip, inline the v4 branches and
-	// delete the pure-black entry.
-	const isV4 = document.documentElement.classList.contains( 'citizen-v4' );
-
+	// citizen-v4-remove — at the 4.0 flip, drop the isV4 parameter, inline the
+	// v4 branches, and delete the pure-black entry.
 	const themeOptions = [
 		{ value: 'os', labelMsg: 'citizen-theme-os-label' },
 		{ value: 'day', labelMsg: 'citizen-theme-day-label' },
@@ -49,9 +50,9 @@ function getDefaultConfig() {
 					{ value: 'large', labelMsg: 'citizen-feature-custom-font-size-large-label' },
 					{ value: 'xlarge', labelMsg: 'citizen-feature-custom-font-size-xlarge-label' }
 				],
-				type: 'select',
+				type: 'segmented',
+				variant: 'font-size',
 				labelMsg: 'citizen-feature-custom-font-size-name',
-				descriptionMsg: 'citizen-feature-custom-font-size-description',
 				visibilityCondition: 'always'
 			},
 			'citizen-feature-custom-width': {
@@ -61,9 +62,9 @@ function getDefaultConfig() {
 					{ value: 'wide', labelMsg: 'citizen-feature-custom-width-wide-label' },
 					{ value: 'full', labelMsg: 'citizen-feature-custom-width-full-label' }
 				],
-				type: 'select',
+				type: 'segmented',
+				variant: 'width',
 				labelMsg: 'citizen-feature-custom-width-name',
-				descriptionMsg: 'citizen-feature-custom-width-description',
 				visibilityCondition: 'always'
 			},
 			// Switch preferences use short-form options (strings).
