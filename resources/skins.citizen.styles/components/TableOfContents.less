@@ -126,8 +126,10 @@
 	}
 }
 
-// Sticky header styles
-.citizen-sticky-header-visible {
+// "Back to top" is only worth a row once there is a top to go back to. Keyed on
+// having scrolled past the page header rather than on the sticky header being
+// up, because below tablet that bar does not exist and the row still should.
+.citizen-below-page-title {
 	.citizen-toc .citizen-toc-top.citizen-toc-link {
 		height: 2rem; // 1rem text + 1rem padding
 		padding-block: var( --space-xs );
@@ -139,32 +141,51 @@
 .client-js {
 	.citizen-toc {
 		position: fixed;
+		// Inset by the offsets, not by a margin on the control inside. The
+		// margin made this box 16px larger than the control in both axes, which
+		// is what the pointer-events dance existed to undo, and it stacked on
+		// the block-end offset so the bottom gap was twice the side gap.
 		bottom: ~'calc( var( --header-size-block-end ) + max( env( safe-area-inset-bottom ), var( --space-xs ) ) )';
-		left: 0;
+		left: var( --space-xs );
 		z-index: @z-index-sticky; // Keep ToC above sticky header and page action, but below site header
-		pointer-events: none; // HACK: Make background clickable
 
 		&-card {
-			// Get consistent margin
-			bottom: ~'calc( 100% - var( --space-xs ) )';
+			// Sits on the control with the gap stated here rather than left to
+			// .citizen-menu__card's margin, which would also offset the card
+			// from the control's own inline edge.
+			bottom: ~'calc( 100% + var( --space-xs ) )';
 			width: max-content;
 			// This is not bulletproof since it will get covered by page header
 			// in extremely short height. but it should be good for now
 			max-height: ~'calc( var( --header-card-maxheight ) - 8rem )';
-			padding: var( --space-xs );
+			margin: 0;
 			// Floating button at the bottom; card expands upward.
 			.mixin-citizen-card-expand( up );
+
+			// Padding belongs to the scrolling box, not the card. The content
+			// takes its max-height from the card, so padding out here makes the
+			// two disagree by that much: the list scrolls to what the container
+			// calls the end while its last row is still below the border, and
+			// rows disappear into the padding rather than at the border.
+			.citizen-menu__card-content {
+				padding: var( --space-xs );
+			}
 		}
 
 		.citizen-dropdown {
 			&-summary {
 				box-sizing: border-box;
-				display: grid;
-				place-content: center;
-				width: var( --toolbar-size );
-				height: var( --toolbar-size );
-				margin: var( --space-xs );
-				pointer-events: auto; // HACK: Make button clickable
+				display: flex;
+				gap: var( --space-xs );
+				align-items: center;
+				justify-content: center;
+				width: auto;
+				// Border-box with a 1px border, so a bare --toolbar-size would
+				// leave a 38px content box and stand 2px shorter than the page
+				// actions beside it. Same expression they use, so the two agree
+				// by construction rather than by coincidence.
+				min-width: ~'calc( var( --toolbar-size ) + var( --border-width-base ) * 2 )';
+				height: ~'calc( var( --toolbar-size ) + var( --border-width-base ) * 2 )';
 				background-color: var( --color-surface-1 );
 				border: 1px solid var( --border-color-base );
 				border-radius: var( --border-radius-medium );
@@ -181,10 +202,6 @@
 			}
 
 			&-details[ open ] {
-				+ .citizen-menu__card {
-					pointer-events: auto; // HACK: Make ToC clickable after ToC is expanded
-				}
-
 				> .citizen-dropdown-summary {
 					background: ~'linear-gradient( var( --background-color-button-quiet--active ), var( --background-color-button-quiet--active ) ) var( --color-surface-1 )';
 				}
