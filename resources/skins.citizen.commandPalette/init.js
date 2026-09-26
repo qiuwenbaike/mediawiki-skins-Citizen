@@ -1,6 +1,7 @@
 const Vue = require( 'vue' );
 const App = require( './components/App.vue' );
 const config = require( './config.json' );
+const specialPages = require( './specialPages.json' );
 
 // Services
 const createRecentItems = require( './services/recentItems.js' );
@@ -22,7 +23,7 @@ const createUserMode = require( './modes/user.js' );
 const createCategoryMode = require( './modes/category.js' );
 const createHistoryMode = require( './modes/history.js' );
 const createFileMode = require( './modes/file.js' );
-const helpMode = require( './modes/help.js' );
+const { createHelpMode } = require( './modes/help.js' );
 
 // Result decorator
 const createAppendQueryActions = require( './utils/appendQueryActions.js' );
@@ -49,12 +50,12 @@ function initApp( overlayEl, options ) {
 	const paletteRegistry = createPaletteRegistry();
 
 	paletteRegistry.register( namespaceMode );
-	paletteRegistry.register( createActionMode( document, mw.Api ) );
+	paletteRegistry.register( createActionMode( document, specialPages ) );
 	paletteRegistry.register( createUserMode( mw.Api ) );
 	paletteRegistry.register( createCategoryMode( mw.Api ) );
 	paletteRegistry.register( createHistoryMode( mw.Api ) );
 	paletteRegistry.register( createFileMode( mw.Api ) );
-	paletteRegistry.register( helpMode );
+	paletteRegistry.register( createHelpMode( paletteRegistry ) );
 
 	// `defineMode` / `defineCommand` are exposed on the hook payload so
 	// extension authors get the same registration-time diagnostics that
@@ -78,6 +79,17 @@ function initApp( overlayEl, options ) {
 		}
 	} );
 
+	if ( config.isBucketEnabled ) {
+		mw.loader.using( 'skins.citizen.commandPalette.bucket' ).then( ( req ) => {
+			const createBucketMode = req( 'skins.citizen.commandPalette.bucket' );
+			paletteRegistry.register(
+				createBucketMode( mw.Api, config.bucketNamespaceId )
+			);
+		} ).catch( ( e ) => {
+			mw.log.error( '[commandPalette] Failed to load Bucket mode:', e );
+		} );
+	}
+
 	if ( config.isSemanticMediaWikiEnabled ) {
 		mw.loader.using( 'skins.citizen.commandPalette.smw' ).then( ( req ) => {
 			const smwMode = req( 'skins.citizen.commandPalette.smw' );
@@ -94,20 +106,16 @@ function initApp( overlayEl, options ) {
 		createSearchProvider( searchClient )
 	];
 
-	const appendQueryActions = createAppendQueryActions();
-
 	const app = Vue.createMwApp( App );
 	app.provide( 'providers', providers );
 	app.provide( 'recentItemsService', recentItemsService );
-	app.provide( 'resultDecorator', appendQueryActions );
+	app.provide( 'resultDecorator', createAppendQueryActions() );
 	app.provide( 'recentItemsProvider', recentItemsProvider );
 	app.provide( 'relatedArticlesProvider', relatedArticlesProvider );
 	app.provide( 'findModeByTrigger', paletteRegistry.findModeByTrigger );
 	app.provide( 'findModeByQuery', paletteRegistry.findModeByQuery );
 	app.provide( 'getTokenPatterns', paletteRegistry.getTokenPatterns );
 	app.provide( 'getHandler', paletteRegistry.getHandler );
-	app.provide( 'getHelpCatalogItems', () => paletteRegistry.getCommandListItems()
-		.filter( ( item ) => item.source !== 'command:help' ) );
 	// Preview-handler service — currently the InstantDiffs gadget bridge,
 	// but the consumer (useResultRouter + the App-level processContext /
 	// onReady wiring) only depends on the duck-typed

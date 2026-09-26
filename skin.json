@@ -1,6 +1,6 @@
 {
 	"name": "Citizen",
-	"version": "3.22.0",
+	"version": "3.23.0",
 	"author": [
 		"[https://www.mediawiki.org/wiki/User:Alistair3149 Alistair3149]",
 		"[https://www.mediawiki.org/wiki/User:Octfx Octfx]",
@@ -91,6 +91,7 @@
 						"citizen-notifications-retry",
 						"citizen-notifications-see-all",
 						"citizen-notifications-preferences",
+						"citizen-page-aside-label",
 						"citizen-preferences-load-error",
 						"citizen-preferences-load-retry",
 						"citizen-preferences-toggle",
@@ -214,6 +215,7 @@
 				"resources/skins.citizen.scripts/overflowElements/stickyRows.js",
 				"resources/skins.citizen.scripts/performance.js",
 				"resources/skins.citizen.scripts/pageTools.js",
+				"resources/skins.citizen.scripts/pageAside.js",
 				"resources/skins.citizen.scripts/preferences.js",
 				"resources/skins.citizen.scripts/scrollObserver.js",
 				"resources/skins.citizen.scripts/search.js",
@@ -266,7 +268,7 @@
 				"mediawiki.util"
 			]
 		},
-		"skins.citizen.share.codex": {
+		"skins.citizen.share": {
 			"class": "MediaWiki\\ResourceLoader\\CodexModule",
 			"codexComponents": [
 				"CdxButton",
@@ -335,7 +337,9 @@
 				"mediawiki.language",
 				"mediawiki.page.ready",
 				"mediawiki.storage",
+				"mediawiki.Title",
 				"mediawiki.util",
+				"user.options",
 				"vue"
 			],
 			"packageFiles": [
@@ -346,6 +350,7 @@
 				"resources/skins.citizen.commandPalette/composables/useGalleryColumnCount.js",
 				"resources/skins.citizen.commandPalette/composables/useListNavigation.js",
 				"resources/skins.citizen.commandPalette/composables/useGridNavigation.js",
+				"resources/skins.citizen.commandPalette/composables/useHelpInput.js",
 				"resources/skins.citizen.commandPalette/composables/useOperationLifecycle.js",
 				"resources/skins.citizen.commandPalette/composables/usePendingActivation.js",
 				"resources/skins.citizen.commandPalette/composables/useProviderOrchestration.js",
@@ -356,7 +361,9 @@
 				"resources/skins.citizen.commandPalette/utils/fetch.js",
 				"resources/skins.citizen.commandPalette/utils/isAbortError.js",
 				"resources/skins.citizen.commandPalette/utils/providerActions.js",
+				"resources/skins.citizen.commandPalette/utils/modeHelpDetail.js",
 				"resources/skins.citizen.commandPalette/utils/appendQueryActions.js",
+				"resources/skins.citizen.commandPalette/utils/destinationKey.js",
 				"resources/skins.citizen.commandPalette/services/instantDiffs.js",
 				"resources/skins.citizen.commandPalette/services/recentItems.js",
 				"resources/skins.citizen.commandPalette/services/searchClient.js",
@@ -378,9 +385,6 @@
 				"resources/skins.citizen.commandPalette/components/CommandPaletteEmptyState.vue",
 				"resources/skins.citizen.commandPalette/components/CommandPaletteFooter.vue",
 				"resources/skins.citizen.commandPalette/components/CommandPaletteHeader.vue",
-				"resources/skins.citizen.commandPalette/components/CommandPaletteHelpModeSummary.vue",
-				"resources/skins.citizen.commandPalette/components/CommandPaletteHelpTriggers.vue",
-				"resources/skins.citizen.commandPalette/components/CommandPaletteHelpView.vue",
 				"resources/skins.citizen.commandPalette/components/CommandPaletteKeyboardHints.vue",
 				"resources/skins.citizen.commandPalette/components/CommandPaletteList.vue",
 				"resources/skins.citizen.commandPalette/components/CommandPaletteListItem.vue",
@@ -425,6 +429,10 @@
 					"name": "resources/skins.citizen.commandPalette/config.json",
 					"callback": "MediaWiki\\Skins\\Citizen\\Hooks\\ResourceLoaderHooks::getCitizenCommandPaletteResourceLoaderConfig"
 				},
+				{
+					"name": "resources/skins.citizen.commandPalette/specialPages.json",
+					"callback": "MediaWiki\\Skins\\Citizen\\Hooks\\ResourceLoaderHooks::getCitizenCommandPaletteSpecialPages"
+				},
 				"resources/skins.citizen.scripts/keyboardLayout.js"
 			],
 			"messages": [
@@ -452,11 +460,12 @@
 				"citizen-command-palette-detail-copy-feedback",
 				"citizen-command-palette-heading-recent",
 				"citizen-command-palette-heading-related",
+				"citizen-command-palette-help-placeholder",
 				"citizen-command-palette-help-section-description",
-				"citizen-command-palette-help-section-modes",
 				"citizen-command-palette-help-section-triggers",
 				"citizen-command-palette-keyhint-actions",
 				"citizen-command-palette-keyhint-back",
+				"citizen-command-palette-keyhint-enter-go",
 				"citizen-command-palette-keyhint-enter-open",
 				"citizen-command-palette-keyhint-enter-search",
 				"citizen-command-palette-keyhint-enter-select",
@@ -464,6 +473,7 @@
 				"citizen-command-palette-keyhint-close",
 				"citizen-command-palette-keyhint-edit-token",
 				"citizen-command-palette-keyhint-exit",
+				"citizen-command-palette-keyhint-exit-literal",
 				"citizen-command-palette-keyhint-navigate",
 				"citizen-command-palette-keyhint-return",
 				"citizen-command-palette-keyhint-select-token",
@@ -501,6 +511,7 @@
 				"citizen-command-palette-mode-user-noresults-title",
 				"citizen-command-palette-mode-user-placeholder",
 				"citizen-command-palette-queryaction-fulltext-search-description",
+				"citizen-command-palette-queryaction-go-description",
 				"citizen-command-palette-queryaction-page-edit-description",
 				"citizen-search-empty-desc",
 				"citizen-search-noresults-title",
@@ -509,6 +520,60 @@
 				"search-nonefound",
 				"searchsuggest-search",
 				"talk"
+			]
+		},
+		"skins.citizen.commandPalette.bucket": {
+			"packageFiles": [
+				"resources/skins.citizen.commandPalette.bucket/init.js",
+				"resources/skins.citizen.commandPalette.bucket/apiClient.js",
+				"resources/skins.citizen.commandPalette.bucket/catalog.js",
+				"resources/skins.citizen.commandPalette.bucket/luaQuery.js",
+				{
+					"name": "resources/skins.citizen.commandPalette.bucket/config.json",
+					"callback": "MediaWiki\\Skins\\Citizen\\Hooks\\ResourceLoaderHooks::getCitizenCommandPaletteResourceLoaderConfig"
+				},
+				{
+					"name": "resources/skins.citizen.commandPalette.bucket/icons.json",
+					"callback": "MediaWiki\\ResourceLoader\\CodexModule::getIcons",
+					"callbackParam": [
+						"cdxIconArticle",
+						"cdxIconCopy",
+						"cdxIconDatabase",
+						"cdxIconEdit",
+						"cdxIconFunnel",
+						"cdxIconListBullet",
+						"cdxIconTable"
+					]
+				}
+			],
+			"messages": [
+				"citizen-command-palette-action-view",
+				"citizen-command-palette-command-bucket-description",
+				"citizen-command-palette-command-bucket-label",
+				"citizen-command-palette-mode-bucket-action-browse",
+				"citizen-command-palette-mode-bucket-action-data",
+				"citizen-command-palette-mode-bucket-breadcrumb-root",
+				"citizen-command-palette-mode-bucket-copy-query-done",
+				"citizen-command-palette-mode-bucket-copy-query-label",
+				"citizen-command-palette-mode-bucket-description-help",
+				"citizen-command-palette-mode-bucket-empty-description",
+				"citizen-command-palette-mode-bucket-empty-title",
+				"citizen-command-palette-mode-bucket-field-count",
+				"citizen-command-palette-mode-bucket-field-detail-indexed",
+				"citizen-command-palette-mode-bucket-field-detail-repeated",
+				"citizen-command-palette-mode-bucket-field-detail-type",
+				"citizen-command-palette-mode-bucket-field-type-repeated",
+				"citizen-command-palette-mode-bucket-filter-comparison",
+				"citizen-command-palette-mode-bucket-noresults-description",
+				"citizen-command-palette-mode-bucket-noresults-title",
+				"citizen-command-palette-mode-bucket-placeholder",
+				"citizen-command-palette-mode-bucket-row-count",
+				"citizen-command-palette-mode-bucket-value-count-partial",
+				"citizen-command-palette-mode-bucket-value-sample-description",
+				"citizen-command-palette-mode-bucket-value-sample-label",
+				"edit",
+				"htmlform-no",
+				"htmlform-yes"
 			]
 		},
 		"skins.citizen.commandPalette.smw": {
@@ -616,6 +681,7 @@
 				"article",
 				"articleNotFound",
 				"articleRedirect",
+				"articles",
 				"articleSearch",
 				"articlesSearch",
 				"bell",
@@ -645,6 +711,7 @@
 				"message",
 				"move",
 				"printer",
+				"puzzle",
 				"qrCode",
 				"quotes",
 				"recentChanges",
@@ -670,6 +737,7 @@
 				"userAvatar",
 				"userContributions",
 				"userGroup",
+				"userRights",
 				"userTalk",
 				"watchlist",
 				"wikiText"
@@ -723,12 +791,15 @@
 			"+ext.cleanchanges.uls": "skinStyles/extensions/CleanChanges/ext.cleanchanges.uls.less",
 			"+ext.codeEditor.ace": "skinStyles/extensions/CodeEditor/ext.codeEditor.ace.less",
 			"+jquery.codeEditor": "skinStyles/extensions/CodeEditor/jquery.codeEditor.less",
+			"+ext.CodeMirror": "skinStyles/extensions/CodeMirror/ext.CodeMirror.v6.less",
 			"+ext.CodeMirror.lib": "skinStyles/extensions/CodeMirror/ext.CodeMirror.lib.less",
 			"+ext.CodeMirror.mode.mediawiki": "skinStyles/extensions/CodeMirror/codemirror.mediawiki.less",
 			"+ext.CodeMirror.v6": "skinStyles/extensions/CodeMirror/ext.CodeMirror.v6.less",
 			"+ext.CodeMirror.v6.mode.mediawiki": "skinStyles/extensions/CodeMirror/codemirror.mediawiki.less",
 			"+ext.CodeMirror.v6.visualEditor": "skinStyles/extensions/CodeMirror/ext.CodeMirror.v6.visualEditor.less",
 			"+ext.CodeMirror.v6.WikiEditor": "skinStyles/extensions/CodeMirror/ext.CodeMirror.v6.WikiEditor.less",
+			"+ext.CodeMirror.visualEditor": "skinStyles/extensions/CodeMirror/ext.CodeMirror.v6.visualEditor.less",
+			"+ext.CodeMirror.WikiEditor": "skinStyles/extensions/CodeMirror/ext.CodeMirror.v6.WikiEditor.less",
 			"+ext.CommentStreams": "skinStyles/extensions/CommentStreams/ext.CommentStreams.less",
 			"+ext.datamaps.core": "skinStyles/extensions/DataMaps/ext.datamaps.core.less",
 			"+ext.datamaps.core.styles": "skinStyles/extensions/DataMaps/ext.datamaps.core.styles.less",

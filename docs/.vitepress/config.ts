@@ -43,6 +43,10 @@ export default defineConfig({
 				link: "/guide/introduction",
 			},
 			{
+				text: "Showcase",
+				link: "/community/showcase",
+			},
+			{
 				text: "Resources",
 				items: [
 					{
@@ -122,6 +126,10 @@ export default defineConfig({
 					{
 						text: "Share",
 						link: "/features/share",
+					},
+					{
+						text: "Side column",
+						link: "/features/side-column",
 					},
 				],
 			},

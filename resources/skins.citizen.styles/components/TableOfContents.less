@@ -3,7 +3,7 @@
 
 	&-contents {
 		position: relative;
-		margin: 0 0 0 var( --space-xs );
+		margin: var( --space-xxs ) 0 var( --space-xxs ) var( --space-xs );
 		border-left: var( --border-width-thick ) solid var( --border-color-base );
 
 		// Reset padding on the direct child list since indentation is only for sublists
@@ -21,17 +21,18 @@
 		list-style: none;
 	}
 
-	// Use .citizen-toc .citizen-toc-link to beat Codex .cdx-button specificity
+	// The row layout on top of the quiet Codex button comes from
+	// .citizen-page-aside__link, which these anchors also carry. What is left
+	// here is what the indicator rail needs: a row that fills the track and
+	// meets the rail with square corners. Scoped under .citizen-toc to beat
+	// Codex .cdx-button specificity.
 	.citizen-toc-link {
-		display: flex;
 		flex-grow: 1;
-		gap: var( --space-xs );
-		align-items: center;
-		justify-content: normal;
-		max-width: none;
-		font-size: inherit; // unset CdxButton font-size
-		font-weight: var( --font-weight-medium );
-		text-wrap: auto; // unset CdxButton text-wrap
+		// The outline is a dense list, so its rows sit at the interactive
+		// minimum rather than the taller panel-link height. Same specificity as
+		// that rule, so this wins by skin.less importing this file after
+		// PageAside.less.
+		min-height: @min-size-interactive-pointer;
 		border-top-left-radius: 0;
 		border-bottom-left-radius: 0;
 
@@ -43,7 +44,7 @@
 			opacity: 0;
 			transition-timing-function: var( --transition-timing-function-ease-out );
 			transition-duration: var( --transition-duration-medium );
-			transition-property: opacity, height, padding;
+			transition-property: opacity, padding;
 		}
 	}
 
@@ -135,8 +136,9 @@
 // up, because below tablet that bar does not exist and the row still should.
 .citizen-below-page-title {
 	.citizen-toc .citizen-toc-top.citizen-toc-link {
-		height: 2rem; // 1rem text + 1rem padding
-		padding-block: var( --space-xs );
+		height: auto;
+		min-height: 2rem;
+		padding-block: var( --space-xxs );
 		overflow: visible;
 		opacity: 1;
 	}
@@ -152,6 +154,12 @@
 		bottom: ~'calc( var( --header-size-block-end ) + max( env( safe-area-inset-bottom ), var( --space-xs ) ) )';
 		left: var( --space-xs );
 		z-index: @z-index-sticky; // Keep ToC above sticky header and page action, but below site header
+
+		// The pill is the control at this width; the panel heading would be a
+		// second label for it, standing outside the popover.
+		> .citizen-page-aside__heading {
+			display: none;
+		}
 
 		&-card {
 			// Sits on the control with the gap stated here rather than left to

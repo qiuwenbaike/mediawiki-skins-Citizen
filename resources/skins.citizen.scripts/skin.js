@@ -79,6 +79,7 @@ function main( window ) {
 		search = require( './search.js' ),
 		dropdown = require( './dropdown.js' ),
 		{ createLastModified } = require( './lastModified.js' ),
+		{ createPageAside } = require( './pageAside.js' ),
 		{ createShare } = require( './share.js' ),
 		setupObservers = require( './setupObservers.js' ),
 		deferUntilFrame = require( './deferUntilFrame.js' ),
@@ -103,6 +104,7 @@ function main( window ) {
 	dropdown.init( { document, window } );
 	createPageTools( { document, window } ).init();
 	createLastModified( { document, Intl } ).init();
+	createPageAside( { document, mw } ).init();
 	createShare( {
 		document,
 		window,
