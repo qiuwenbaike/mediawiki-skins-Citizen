@@ -1,7 +1,5 @@
 .citizen-page-aside {
 	--size-icon: 1rem;
-	width: 0;
-	height: 0;
 
 	@media ( min-width: @min-width-breakpoint-desktop ) {
 		display: flex;
@@ -89,6 +87,10 @@
 	// uncovered is the underline the mixin adds while a link is pressed.
 	& a&__link:not( [ role='button' ] ):active {
 		text-decoration: none;
+	}
+
+	&__panel--lastmod {
+		display: none;
 	}
 }
 
