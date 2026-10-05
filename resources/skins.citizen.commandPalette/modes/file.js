@@ -16,70 +16,19 @@
  * - Layout: gallery (tiled). The active mode's `layout` field tells
  *   App.vue to swap CommandPaletteList for CommandPaletteGallery.
  */
-const {
-	cdxIconImageGallery,
-	cdxIconImage,
-	cdxIconArticle,
-	cdxIconAttachment,
-	cdxIconVolumeUp,
-	cdxIconPlay
-} = require( '../icons.json' );
+const { cdxIconImageGallery } = require( '../icons.json' );
 const config = require( '../config.json' );
 const isAbortError = require( '../utils/isAbortError.js' );
+const formatTimestamp = require( '../utils/formatTimestamp.js' );
+const { computeThumbWidth, iconForMediatype } = require( '../utils/fileMedia.js' );
 const { defineMode } = require( '../services/defineMode.js' );
 
 const FILE_NAMESPACE = 6;
 const RESULT_LIMIT = 50;
 
-// Gallery tiles render in a `minmax(140px, 1fr)` grid; the average
-// rendered tile width is roughly BASE_TILE_WIDTH. The MW server resamples
-// to whatever `iiurlwidth` we request, so picking a width that matches
-// the user's DPR avoids over-fetching on 1× displays and prevents the
-// browser from upscaling on retina-class (2×, 3×) displays. Capped at
-// MAX_THUMB_WIDTH to avoid runaway values from unusual ratios. Computed
-// per request rather than at module load so a window dragged between a
-// 1× and a 2× display picks up the new ratio on the next list refresh.
-const BASE_TILE_WIDTH = 160;
-const MAX_THUMB_WIDTH = 400;
-
-function computeThumbWidth() {
-	const dpr = ( typeof window !== 'undefined' && window.devicePixelRatio ) || 1;
-	return Math.min(
-		MAX_THUMB_WIDTH,
-		Math.ceil( BASE_TILE_WIDTH * Math.max( 1, dpr ) )
-	);
-}
-
 const KB = 1024;
 const MB = KB * 1024;
 const GB = MB * 1024;
-
-const MS_PER_MIN = 60 * 1000;
-const MS_PER_HOUR = 60 * MS_PER_MIN;
-const MS_PER_DAY = 24 * MS_PER_HOUR;
-
-/**
- * Map a MediaWiki mediatype to a fallback Codex icon. Used when the
- * file has no thumbnail (typically: audio, video, archive, 3D).
- *
- * @param {string} mediatype Uppercase mediatype string from imageinfo
- * @return {Object} Codex icon
- */
-function iconForMediatype( mediatype ) {
-	switch ( mediatype ) {
-		case 'BITMAP':
-		case 'DRAWING':
-			return cdxIconImage;
-		case 'OFFICE':
-			return cdxIconArticle;
-		case 'AUDIO':
-			return cdxIconVolumeUp;
-		case 'VIDEO':
-			return cdxIconPlay;
-		default:
-			return cdxIconAttachment;
-	}
-}
 
 // Brand-cased MIME subtypes that look wrong in plain uppercase (WEBM, WEBP).
 // Anything not listed falls through to .toUpperCase() in friendlyType().
@@ -165,38 +114,6 @@ function formatDimensionsAndSize( info ) {
 }
 
 /**
- * Format an upload timestamp as a relative duration ("now", "5m",
- * "3h", "2d") for recent uploads, falling back to a localized short
- * date for older ones. Mirrors the history mode's formatting so the
- * palette stays visually consistent.
- *
- * @param {string} timestamp ISO 8601 string from imageinfo.timestamp
- * @return {string}
- */
-function formatUploadAge( timestamp ) {
-	const then = new Date( timestamp );
-	const diffMs = Date.now() - then.getTime();
-
-	if ( diffMs >= 0 && diffMs < 7 * MS_PER_DAY ) {
-		if ( diffMs < MS_PER_MIN ) {
-			return 'now';
-		}
-		if ( diffMs < MS_PER_HOUR ) {
-			return Math.floor( diffMs / MS_PER_MIN ) + 'm';
-		}
-		if ( diffMs < MS_PER_DAY ) {
-			return Math.floor( diffMs / MS_PER_HOUR ) + 'h';
-		}
-		return Math.floor( diffMs / MS_PER_DAY ) + 'd';
-	}
-
-	const sameYear = then.getFullYear() === new Date().getFullYear();
-	return then.toLocaleDateString( undefined, sameYear ?
-		{ month: 'short', day: 'numeric' } :
-		{ year: 'numeric', month: 'short', day: 'numeric' } );
-}
-
-/**
  * Pull the license short-name out of the extmetadata bag. The field is
  * a localized string under `LicenseShortName.value`. Returns an empty
  * string when absent so the detail panel can drop the row.
@@ -252,7 +169,7 @@ function buildDetailPairs( info ) {
 		pairs.push( {
 			key: 'uploaded',
 			label: mw.message( 'citizen-command-palette-mode-file-detail-uploaded' ).text(),
-			value: formatUploadAge( info.timestamp ) + ' · ' + info.user
+			value: formatTimestamp( info.timestamp ) + ' · ' + info.user
 		} );
 	}
 
@@ -593,7 +510,15 @@ function createFileMode( ApiConstructor ) {
 		},
 		getResults,
 		getItemDetail,
-		onResultSelect
+		onResultSelect,
+		remember( item ) {
+			/** @type {Object<string, string>} */
+			const data = { mediatype: item.mediatype };
+			if ( item.thumbnail ) {
+				data.thumbnail = item.thumbnail.url;
+			}
+			return { kind: 'file', label: item.label, data };
+		}
 	} );
 }
 
